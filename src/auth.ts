@@ -8,5 +8,18 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	adapter: PrismaAdapter(prisma),
 	providers: [Google({ clientId: AUTH_GOOGLE_ID, clientSecret: AUTH_GOOGLE_SECRET })],
 	secret: AUTH_SECRET,
-	trustHost: true
+	trustHost: true,
+	callbacks: {
+		session({ session, user }) {
+			session.user.id = user.id;
+			return session;
+		}
+	},
+	events: {
+		async createUser({ user }) {
+			if (!user.id) return;
+			const team = await prisma.team.create({ data: { name: 'Personal' } });
+			await prisma.teamMember.create({ data: { teamId: team.id, userId: user.id } });
+		}
+	}
 });
