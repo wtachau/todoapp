@@ -1,0 +1,36 @@
+{
+  "name": "todoapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@sveltejs/adapter-vercel": "^6.3.3",
+    "@sveltejs/kit": "^2.55.0",
+    "@types/pg": "^8.18.0",
+    "dotenv": "^17.3.1",
+    "prisma": "^7.5.0",
+    "svelte": "^5.53.11",
+    "svelte-check": "^4.4.5",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@auth/sveltekit": "^1.11.1",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@supabase/supabase-js": "^2.99.1",
+    "pg": "^8.20.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx sv:*)",
+      "Bash(npm run:*)",
+      "Bash(npx prisma:*)",
+      "Bash(psql -l)",
+      "Bash(psql postgresql://localhost:5432/todoapp -c \"SELECT 1\")"
+    ]
+  }
+}
