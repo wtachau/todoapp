@@ -14,7 +14,9 @@
       "Bash(psql postgresql://williamtachau@localhost:5432/todoapp -c \"DELETE FROM \"\"Team\"\" WHERE name = ''Test'';\")"
     ],
     "additionalDirectories": [
-      "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects"
+      "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",
+      "/Users/williamtachau/src/todoapp",
+      "/Users/williamtachau/src/todoapp/src"
     ]
   }
 }

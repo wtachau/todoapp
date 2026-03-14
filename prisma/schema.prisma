@@ -10,7 +10,7 @@ datasource db {
 // Auth.js required models
 
 model User {
-  id            String       @id @default(cuid())
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String?
   email         String?      @unique
   emailVerified DateTime?
@@ -22,8 +22,8 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @db.Uuid
   type              String
   provider          String
   providerAccountId String
@@ -40,9 +40,9 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sessionToken String   @unique
-  userId       String
+  userId       String   @db.Uuid
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -68,7 +68,7 @@ model Team {
 model TeamMember {
   id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   teamId String @db.Uuid
-  userId String
+  userId String @db.Uuid
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -88,7 +88,7 @@ model Task {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
   projectId   String    @db.Uuid
-  assignedTo  String
+  assignedTo  String  @db.Uuid
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
