@@ -10,6 +10,9 @@
 - Step 2 complete: `POST /api/generate-tasks` endpoint (auth-gated in prod, open in dev)
 - Step 3 complete: GitHub Actions workflow at `.github/workflows/generate-tasks.yml` (every 15 min)
 - Local dev: `npm run dev:local` runs Vite + cron loop together via concurrently
+- Step 4 complete: Dashboard shows flat task list across all projects; partner view at `/dashboard/users/[id]`
+- Step 5 complete: One-off task creation with assignee picker already existed on project page
+- TaskStatus enum (todo/in_progress/done) added; status + completedAt kept in sync
 
 ## Pending setup (needs to be done once)
 - Add `CRON_SECRET` env var to Vercel dashboard
@@ -58,16 +61,8 @@ Add to `Task`:
 - `CRON_SECRET` stored as a GitHub Actions secret and in Vercel env vars
 - **Why not Vercel cron**: requires Pro plan ($20/mo); GitHub Actions is free
 
-### Step 4 — Task visibility (UI only, no schema changes)
-- Dashboard shows all tasks assigned to me, across all projects/teams, in one flat list
-- Each task shows project name + team name as context
-- Add "View [partner]'s tasks" link that shows their tasks in shared teams only
-- Filter: hide completed tasks by default, toggle to show them
-
-### Step 5 — One-off task assignment
-- When creating a task, show a dropdown of team members to assign to
-- Assignee is required (already in schema)
-- Supports assigning to self or partner in a shared team
+### ~~Step 4~~ ✓ Task visibility
+### ~~Step 5~~ ✓ One-off task assignment
 
 ### Step 6 — Snooze
 - Add `snoozedUntil DateTime?` to Task schema

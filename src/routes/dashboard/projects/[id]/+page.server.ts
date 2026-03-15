@@ -88,9 +88,13 @@ export const actions: Actions = {
 		const isMember = task.project.team.members.some((m) => m.userId === userId);
 		if (!isMember) return fail(403, { error: 'Forbidden' });
 
+		const done = task.completedAt === null;
 		await prisma.task.update({
 			where: { id: taskId },
-			data: { completedAt: task.completedAt ? null : new Date() }
+			data: {
+				status: done ? 'done' : 'todo',
+				completedAt: done ? new Date() : null
+			}
 		});
 	},
 

@@ -30,10 +30,10 @@
 				<form method="POST" action="?/completeTask" use:enhance>
 					<input type="hidden" name="taskId" value={task.id} />
 					<button type="submit" style="cursor: pointer">
-						{task.completedAt ? '☑' : '☐'}
+						{task.status === 'done' ? '☑' : '☐'}
 					</button>
 				</form>
-				<span style={task.completedAt ? 'text-decoration: line-through; color: #999' : ''}>
+				<span style={task.status === 'done' ? 'text-decoration: line-through; color: #999' : ''}>
 					{task.title}
 				</span>
 				<span style="margin-left: auto; font-size: 0.85rem; color: #666">
