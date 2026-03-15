@@ -65,6 +65,12 @@ enum AssignmentMode {
   round_robin
 }
 
+enum TaskStatus {
+  todo
+  in_progress
+  done
+}
+
 model Team {
   id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
@@ -96,6 +102,7 @@ model Project {
 model Task {
   id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
+  status      TaskStatus     @default(todo)
   projectId   String         @db.Uuid
   assignedTo  String         @db.Uuid
   completedAt DateTime?

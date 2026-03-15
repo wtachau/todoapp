@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Read(/Users/williamtachau/src/todoapp/**)",
+      "Write(/Users/williamtachau/src/todoapp/**)",
+      "Edit(/Users/williamtachau/src/todoapp/**)",
       "Bash(npx sv:*)",
       "Bash(npm run:*)",
       "Bash(npx prisma:*)",
@@ -23,13 +26,15 @@
       "Bash(psql -c \"CREATE DATABASE todoapp;\")",
       "Bash(git checkout:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx concurrently:*)"
+      "Bash(npx concurrently:*)",
+      "WebSearch"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",
       "/Users/williamtachau/src/todoapp",
       "/Users/williamtachau/src/todoapp/src",
-      "/Users/williamtachau/src/personal/todoapp/src/routes/dashboard/partner"
+      "/Users/williamtachau/src/personal/todoapp/src/routes/dashboard/partner",
+      "/Users/williamtachau/src/todoapp/src/routes/dashboard/users"
     ]
   }
 }
