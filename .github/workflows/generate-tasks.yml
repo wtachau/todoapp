@@ -1,0 +1,17 @@
+name: Generate Tasks
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 minutes
+  workflow_dispatch:         # allow manual trigger from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger task generation
+        run: |
+          curl -s -X POST https://shared-tasks.app/api/generate-tasks \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}" \
+            --fail

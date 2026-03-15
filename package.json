@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite dev",
+    "dev:local": "concurrently -n vite,cron -c cyan,yellow \"vite dev\" \"node scripts/cron-local.mjs\"",
     "build": "prisma migrate deploy && vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -19,6 +20,7 @@
     "@sveltejs/adapter-vercel": "^6.3.3",
     "@sveltejs/kit": "^2.55.0",
     "@types/pg": "^8.18.0",
+    "concurrently": "^9.2.1",
     "dotenv": "^17.3.1",
     "prisma": "^5.22.0",
     "svelte": "^5.53.11",
@@ -31,6 +33,7 @@
     "@auth/sveltekit": "^1.11.1",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.99.1",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "rrule": "^2.8.1"
   }
 }

@@ -11,12 +11,25 @@
       "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"i needed to restart my server. please reset the db again\" npx prisma migrate reset --force)",
       "Bash(psql postgresql://williamtachau@localhost:5432/todoapp -c \"\\\\d \"\"Team\"\"\")",
       "Bash(psql postgresql://williamtachau@localhost:5432/todoapp -c \"INSERT INTO \"\"Team\"\" \\(name\\) VALUES \\(''Test''\\) RETURNING id;\")",
-      "Bash(psql postgresql://williamtachau@localhost:5432/todoapp -c \"DELETE FROM \"\"Team\"\" WHERE name = ''Test'';\")"
+      "Bash(psql postgresql://williamtachau@localhost:5432/todoapp -c \"DELETE FROM \"\"Team\"\" WHERE name = ''Test'';\")",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(nvm use:*)",
+      "Bash(npm install:*)",
+      "Bash(nvm ls:*)",
+      "Bash(nvm install:*)",
+      "Bash(pg_isready)",
+      "Bash(psql --version)",
+      "Bash(psql -U \"$USER\" -c '\\\\l')",
+      "Bash(psql -c \"CREATE DATABASE todoapp;\")",
+      "Bash(git checkout:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx concurrently:*)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",
       "/Users/williamtachau/src/todoapp",
-      "/Users/williamtachau/src/todoapp/src"
+      "/Users/williamtachau/src/todoapp/src",
+      "/Users/williamtachau/src/personal/todoapp/src/routes/dashboard/partner"
     ]
   }
 }

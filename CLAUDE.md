@@ -8,10 +8,12 @@
 
 ## Running Locally
 ```bash
-source ~/.nvm/nvm.sh && nvm use 20
-npm run dev
+source ~/.nvm/nvm.sh && nvm use 20.20.1
+npm run dev:local
 ```
-Node 20 is required (project was installed under Node 20).
+- `dev:local` runs Vite + a local cron loop (fires `POST /api/generate-tasks` every 15 minutes, matching prod behaviour)
+- Use plain `npm run dev` only if you don't need task generation
+- Node 20.20.1+ is required (Vite 8 requires Node 20.19+). If you see a rolldown native binding error, delete `node_modules` and `package-lock.json` and re-run `npm install`.
 
 ## Database
 - Local: `postgresql://localhost:5432/todoapp`
