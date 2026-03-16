@@ -15,21 +15,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = await locals.auth();
 	const userId = session!.user!.id!;
 	const showDone = url.searchParams.get('showDone') === 'true';
+	const projectFilter = url.searchParams.get('project') ?? null;
 
 	const now = new Date();
 
-	const [tasks, teams] = await Promise.all([
+	const baseWhere = {
+		assignedTo: userId,
+		OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
+		...(projectFilter ? { projectId: projectFilter } : {})
+	};
+
+	const taskInclude = {
+		project: { include: { team: { include: { members: true } } } }
+	};
+
+	const [activeTasks, doneTasks, teams] = await Promise.all([
 		prisma.task.findMany({
-			where: {
-				assignedTo: userId,
-				...(showDone ? {} : { status: { not: 'done' } }),
-				OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }]
-			},
-			include: {
-				project: { include: { team: { include: { members: true } } } }
-			},
+			where: { ...baseWhere, status: { not: 'done' } },
+			include: taskInclude,
 			orderBy: { createdAt: 'desc' }
 		}),
+		showDone
+			? prisma.task.findMany({
+					where: { ...baseWhere, status: 'done' },
+					include: taskInclude,
+					orderBy: { completedAt: 'desc' }
+				})
+			: Promise.resolve([]),
 		prisma.team.findMany({
 			where: { members: { some: { userId } } },
 			include: {
@@ -39,13 +51,19 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		})
 	]);
 
+	// Distinct projects from active tasks (for filter chips)
+	const allProjects = [...activeTasks, ...doneTasks]
+		.map((t) => t.project)
+		.filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
+		.sort((a, b) => a.name.localeCompare(b.name));
+
 	// Shared team members (excluding self) for partner links
 	const partners = teams
 		.filter((t) => t.members.length > 1)
 		.flatMap((t) => t.members.filter((m) => m.userId !== userId).map((m) => m.user))
-		.filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i); // dedupe
+		.filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i);
 
-	return { tasks, teams, partners, showDone };
+	return { activeTasks, doneTasks, allProjects, teams, partners, showDone, projectFilter };
 };
 
 export const actions: Actions = {
