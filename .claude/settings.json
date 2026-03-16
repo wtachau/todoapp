@@ -27,7 +27,8 @@
       "Bash(git checkout:*)",
       "Bash(npx tsc:*)",
       "Bash(npx concurrently:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(gh run:*)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",

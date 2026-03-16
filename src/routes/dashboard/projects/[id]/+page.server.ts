@@ -2,6 +2,10 @@ import { prisma } from '$lib/server/prisma';
 import { error, fail } from '@sveltejs/kit';
 import pkg from 'rrule';
 const { RRule } = pkg;
+
+function startOfDayUTC(date: Date): Date {
+	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -157,7 +161,7 @@ export const actions: Actions = {
 			try {
 				const rule = RRule.fromString(rruleRaw);
 				recurrenceRule = rule.toString();
-				nextRunAt = rule.after(new Date()) ?? new Date();
+				nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
 			} catch {
 				return fail(400, { error: 'Invalid RRULE string' });
 			}
@@ -165,7 +169,7 @@ export const actions: Actions = {
 			const byweekday = days.map((d) => DAY_MAP[d]);
 			const rule = new RRule({ freq: RRule.WEEKLY, byweekday });
 			recurrenceRule = rule.toString();
-			nextRunAt = rule.after(new Date()) ?? new Date();
+			nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
 		}
 
 		// For round-robin: if a start person is specified, set lastAssignedTo to the
