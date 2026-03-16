@@ -1,5 +1,5 @@
 import { prisma } from '$lib/server/prisma';
-import { redirect, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { fromZonedTime } from 'date-fns-tz';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		project: { include: { team: { include: { members: true } } } }
 	};
 
-	const [activeTasks, doneTasks, teams] = await Promise.all([
+	const [activeTasks, doneTasks, teams, currentUser] = await Promise.all([
 		prisma.task.findMany({
 			where: { ...baseWhere, status: { not: 'done' } },
 			include: taskInclude,
@@ -48,7 +48,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				projects: { orderBy: { createdAt: 'desc' } },
 				members: { include: { user: true } }
 			}
-		})
+		}),
+		prisma.user.findUnique({ where: { id: userId }, select: { defaultProjectId: true } })
 	]);
 
 	// Distinct projects from active tasks (for filter chips)
@@ -63,26 +64,32 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.flatMap((t) => t.members.filter((m) => m.userId !== userId).map((m) => m.user))
 		.filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i);
 
-	return { activeTasks, doneTasks, allProjects, teams, partners, showDone, projectFilter };
+	const accessibleProjects = teams.flatMap((t) => t.projects);
+	const defaultProjectId = currentUser?.defaultProjectId ?? accessibleProjects[0]?.id ?? null;
+
+	return { activeTasks, doneTasks, allProjects, accessibleProjects, defaultProjectId, teams, partners, showDone, projectFilter };
 };
 
 export const actions: Actions = {
-	createProject: async ({ request, locals }) => {
+	createTask: async ({ request, locals }) => {
 		const session = await locals.auth();
 		const userId = session!.user!.id!;
 		const data = await request.formData();
-		const name = (data.get('name') as string)?.trim();
-		const teamId = data.get('teamId') as string;
+		const title = (data.get('title') as string)?.trim();
+		const projectId = data.get('projectId') as string;
 
-		if (!name) return fail(400, { error: 'Name is required' });
+		if (!title) return fail(400, { error: 'Title is required' });
 
-		const membership = await prisma.teamMember.findUnique({
-			where: { teamId_userId: { teamId, userId } }
+		const project = await prisma.project.findUnique({
+			where: { id: projectId },
+			include: { team: { include: { members: true } } }
 		});
-		if (!membership) return fail(403, { error: 'Forbidden' });
+		if (!project) return fail(404, { error: 'Project not found' });
+		if (!project.team.members.some((m) => m.userId === userId))
+			return fail(403, { error: 'Forbidden' });
 
-		const project = await prisma.project.create({ data: { name, teamId } });
-		redirect(303, `/dashboard/projects/${project.id}`);
+		await prisma.task.create({ data: { title, projectId, assignedTo: userId } });
+		await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });
 	},
 
 	snooze: async ({ request, locals }) => {

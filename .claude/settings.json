@@ -28,7 +28,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx concurrently:*)",
       "WebSearch",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(psql postgresql://localhost:5432/todoapp -c \":*)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",

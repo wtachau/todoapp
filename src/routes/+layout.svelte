@@ -15,6 +15,7 @@
 			<nav class="flex gap-5 text-xs tracking-wide text-stone">
 				<a href="/dashboard" class="hover:text-sage transition-colors">dashboard</a>
 				<a href="/dashboard/snoozed" class="hover:text-sage transition-colors">snoozed</a>
+				<a href="/dashboard/settings" class="hover:text-sage transition-colors">settings</a>
 				{#if data.session?.user?.name}
 					<span class="text-stone-light">·</span>
 					<span>{data.session.user.name}</span>

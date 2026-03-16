@@ -7,8 +7,11 @@
 	import { page } from '$app/stores';
 
 	let { data } = $props();
-	let creatingFor = $state<string | null>(null);
 	let snoozing = $state<string | null>(null);
+
+	const filteredProject = $derived(
+		data.projectFilter ? data.allProjects.find(p => p.id === data.projectFilter) : null
+	);
 
 	function filterUrl(params: Record<string, string | null>) {
 		const u = new URL($page.url);
@@ -44,9 +47,34 @@
 	</div>
 {/if}
 
+<!-- Quick add -->
+<form method="POST" action="?/createTask" use:enhance={() => async ({ update }) => { await update({ reset: true }); }} class="flex gap-2 mb-6">
+	<input
+		name="title"
+		placeholder="Add a task…"
+		required
+		class="flex-1 border border-stone-light rounded-md px-3 py-2 text-sm bg-card focus:border-sage focus:outline-none"
+	/>
+	<select
+		name="projectId"
+		class="border border-stone-light rounded-md px-2 py-2 text-sm bg-card focus:border-sage focus:outline-none"
+	>
+		{#each data.accessibleProjects as project}
+			<option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
+		{/each}
+	</select>
+	<button type="submit" class="px-4 py-2 bg-sage text-white text-sm rounded-md hover:bg-sage/90 cursor-pointer">Add</button>
+</form>
+
 <!-- Active tasks -->
 <div class="flex justify-between items-baseline mb-2 mt-2">
-	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">My Tasks</h2>
+	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">
+		{#if filteredProject}
+			{filteredProject.name}
+		{:else}
+			My Tasks
+		{/if}
+	</h2>
 </div>
 
 {#if data.activeTasks.length === 0}
@@ -93,43 +121,6 @@
 	</div>
 {/each}
 
-<hr class="border-stone-light my-6" />
-
-<!-- Projects -->
-<div class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-3">Projects</div>
-
-{#each data.teams as team}
-	<div class="mb-6">
-		<div class="text-xs font-bold tracking-wide text-stone uppercase mb-2">{team.name}</div>
-
-		{#each team.projects as project}
-			<div class="mb-1">
-				<a href="/dashboard/projects/{project.id}" class="text-sm text-sage hover:underline">
-					{project.name}
-				</a>
-			</div>
-		{/each}
-
-		{#if creatingFor === team.id}
-			<form method="POST" action="?/createProject" use:enhance class="flex gap-2 mt-2">
-				<input type="hidden" name="teamId" value={team.id} />
-				<input
-					name="name"
-					placeholder="Project name"
-					required
-					autofocus
-					class="flex-1 border border-stone-light rounded px-3 py-1.5 text-sm bg-white focus:border-sage focus:outline-none"
-				/>
-				<button type="submit" class="px-3 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer">Add</button>
-				<button type="button" onclick={() => (creatingFor = null)} class="px-3 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
-			</form>
-		{:else}
-			<button onclick={() => (creatingFor = team.id)} class="mt-1 text-xs text-stone hover:text-sage transition-colors cursor-pointer">
-				+ New project
-			</button>
-		{/if}
-	</div>
-{/each}
 
 {#snippet taskCard(task: typeof data.activeTasks[0])}
 	<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors">
