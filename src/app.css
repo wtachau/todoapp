@@ -1,1 +1,26 @@
 @import "tailwindcss";
+
+@theme {
+  --color-linen: #f0ece4;
+  --color-ink: #2c2c28;
+  --color-sage: #3a5040;
+  --color-sage-light: #e0ece4;
+  --color-sage-muted: #8a9a8a;
+  --color-stone: #b0a898;
+  --color-stone-light: #d8d0c4;
+  --color-stone-lighter: #ece8e0;
+  --color-card: #ffffff;
+  --font-sans: 'Lato', sans-serif;
+  --font-serif: 'Libre Baskerville', serif;
+}
+
+html, body {
+  background-color: var(--color-linen);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Base input/select/button resets */
+input, select, textarea {
+  font-family: var(--font-sans);
+}

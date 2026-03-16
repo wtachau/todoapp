@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }]
 			},
 			include: {
-				project: { include: { team: true } }
+				project: { include: { team: { include: { members: true } } } }
 			},
 			orderBy: { createdAt: 'desc' }
 		}),
