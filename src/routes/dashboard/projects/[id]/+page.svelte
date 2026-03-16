@@ -19,60 +19,68 @@
 	}
 </script>
 
-<main style="padding: 2rem; max-width: 640px">
-	<a href="/dashboard">← Dashboard</a>
-	<h1>{project.name}</h1>
+<main class="p-8 max-w-2xl mx-auto">
+	<a href="/dashboard" class="text-blue-600 hover:underline text-sm">← Dashboard</a>
+	<h1 class="text-2xl font-bold mt-2 mb-6">{project.name}</h1>
 
 	<!-- Tasks -->
-	<ul style="padding: 0; list-style: none">
+	<ul class="list-none p-0 mb-4">
 		{#each project.tasks as task}
-			<li style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #eee">
-				<form method="POST" action="?/completeTask" use:enhance>
+			<li class="flex items-center gap-3 py-2 border-b border-gray-100">
+				<form method="POST" action="?/completeTask" use:enhance style="display: contents">
 					<input type="hidden" name="taskId" value={task.id} />
-					<button type="submit" style="cursor: pointer">
+					<button type="submit" class="text-lg cursor-pointer leading-none">
 						{task.status === 'done' ? '☑' : '☐'}
 					</button>
 				</form>
-				<span style={task.status === 'done' ? 'text-decoration: line-through; color: #999' : ''}>
+				<span class={task.status === 'done' ? 'line-through text-gray-400' : ''}>
 					{task.title}
 				</span>
-				<span style="margin-left: auto; font-size: 0.85rem; color: #666">
+				<span class="ml-auto text-sm text-gray-500 shrink-0">
 					{task.assignee.name ?? task.assignee.email}
 				</span>
 				<form method="POST" action="?/deleteTask" use:enhance>
 					<input type="hidden" name="taskId" value={task.id} />
-					<button type="submit" style="color: #c00; cursor: pointer">✕</button>
+					<button type="submit" class="text-red-400 hover:text-red-600 cursor-pointer">✕</button>
 				</form>
 			</li>
 		{/each}
 	</ul>
 
 	{#if open}
-		<form method="POST" action="?/createTask" use:enhance={() => async ({ update }) => { open = false; await update(); }} style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem">
-			<input name="title" placeholder="Task title" required autofocus />
-			<select name="assignedTo" required>
+		<form
+			method="POST"
+			action="?/createTask"
+			use:enhance={() => async ({ update }) => { open = false; await update(); }}
+			class="flex flex-col gap-2 mt-4"
+		>
+			<input name="title" placeholder="Task title" required autofocus
+				class="border border-gray-200 rounded px-3 py-2 text-sm" />
+			<select name="assignedTo" required class="border border-gray-200 rounded px-3 py-2 text-sm">
 				<option value="">Assign to…</option>
 				{#each members as m}
 					<option value={m.userId}>{m.user.name ?? m.user.email}</option>
 				{/each}
 			</select>
-			<div style="display: flex; gap: 0.5rem">
-				<button type="submit">Add task</button>
-				<button type="button" onclick={() => (open = false)}>Cancel</button>
+			<div class="flex gap-2">
+				<button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Add task</button>
+				<button type="button" onclick={() => (open = false)} class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
 			</div>
 		</form>
 	{:else}
-		<button onclick={() => (open = true)} style="margin-top: 1rem">+ New task</button>
+		<button onclick={() => (open = true)} class="mt-2 text-sm text-blue-600 hover:underline cursor-pointer">
+			+ New task
+		</button>
 	{/if}
 
 	<!-- Task Generators -->
-	<h2 style="margin-top: 2.5rem">Task Generators</h2>
+	<h2 class="text-xl font-semibold mt-10 mb-4">Task Generators</h2>
 
 	{#each project.generators as gen}
-		<div style="padding: 0.5rem 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; gap: 0.75rem">
-			<div style="flex: 1">
-				<div><strong>{gen.title}</strong></div>
-				<div style="font-size: 0.85rem; color: #666">
+		<div class="flex items-start gap-3 py-3 border-b border-gray-100">
+			<div class="flex-1">
+				<div class="font-medium">{gen.title}</div>
+				<div class="text-sm text-gray-500 mt-0.5">
 					{gen.assignmentMode === 'fixed'
 						? `Always → ${gen.fixedAssignee?.name ?? gen.fixedAssignee?.email ?? '?'}`
 						: 'Round-robin'}
@@ -82,7 +90,7 @@
 			</div>
 			<form method="POST" action="?/deleteGenerator" use:enhance>
 				<input type="hidden" name="generatorId" value={gen.id} />
-				<button type="submit" style="color: #c00; cursor: pointer">✕</button>
+				<button type="submit" class="text-red-400 hover:text-red-600 cursor-pointer">✕</button>
 			</form>
 		</div>
 	{/each}
@@ -92,20 +100,22 @@
 			method="POST"
 			action="?/createGenerator"
 			use:enhance={() => async ({ update }) => { openGenerator = false; genMode = 'round_robin'; genAdvanced = false; await update(); }}
-			style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem"
+			class="flex flex-col gap-3 mt-4"
 		>
-			<input name="title" placeholder="e.g. Take out trash" required autofocus />
+			<input name="title" placeholder="e.g. Take out trash" required autofocus
+				class="border border-gray-200 rounded px-3 py-2 text-sm" />
 			<input type="hidden" name="advanced" value={genAdvanced ? 'true' : 'false'} />
 
 			{#if genAdvanced}
-				<input name="rrule" placeholder="FREQ=DAILY;INTERVAL=2" required style="font-family: monospace" />
-				<div style="font-size: 0.8rem; color: #888">
+				<input name="rrule" placeholder="FREQ=DAILY;INTERVAL=2" required
+					class="border border-gray-200 rounded px-3 py-2 text-sm font-mono" />
+				<p class="text-xs text-gray-400">
 					e.g. <code>FREQ=DAILY;INTERVAL=2</code> · <code>FREQ=WEEKLY;BYDAY=MO,WE,FR</code>
-				</div>
+				</p>
 			{:else}
-				<div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+				<div class="flex gap-3 flex-wrap">
 					{#each DAYS as day}
-						<label>
+						<label class="flex items-center gap-1 text-sm cursor-pointer">
 							<input type="checkbox" name="days" value={day} />
 							{DAY_LABELS[day]}
 						</label>
@@ -113,30 +123,34 @@
 				</div>
 			{/if}
 
-			<button type="button" onclick={() => (genAdvanced = !genAdvanced)} style="align-self: flex-start; font-size: 0.8rem; background: none; border: none; padding: 0; cursor: pointer; color: #666; text-decoration: underline">
+			<button
+				type="button"
+				onclick={() => (genAdvanced = !genAdvanced)}
+				class="self-start text-xs text-gray-500 hover:text-gray-700 underline cursor-pointer"
+			>
 				{genAdvanced ? '← Simple' : 'Advanced (RRULE)'}
 			</button>
 
-			<div style="display: flex; gap: 1rem">
-				<label>
+			<div class="flex gap-4">
+				<label class="flex items-center gap-1 text-sm cursor-pointer">
 					<input type="radio" name="assignmentMode" value="round_robin" checked={genMode === 'round_robin'} onchange={() => (genMode = 'round_robin')} />
 					Round-robin
 				</label>
-				<label>
+				<label class="flex items-center gap-1 text-sm cursor-pointer">
 					<input type="radio" name="assignmentMode" value="fixed" checked={genMode === 'fixed'} onchange={() => (genMode = 'fixed')} />
 					Fixed
 				</label>
 			</div>
 
 			{#if genMode === 'fixed'}
-				<select name="fixedAssigneeId" required>
+				<select name="fixedAssigneeId" required class="border border-gray-200 rounded px-3 py-2 text-sm">
 					<option value="">Assign to…</option>
 					{#each members as m}
 						<option value={m.userId}>{m.user.name ?? m.user.email}</option>
 					{/each}
 				</select>
 			{:else}
-				<select name="startsWithId">
+				<select name="startsWithId" class="border border-gray-200 rounded px-3 py-2 text-sm">
 					<option value="">Starts with… (optional)</option>
 					{#each members as m}
 						<option value={m.userId}>{m.user.name ?? m.user.email}</option>
@@ -144,12 +158,14 @@
 				</select>
 			{/if}
 
-			<div style="display: flex; gap: 0.5rem">
-				<button type="submit">Add generator</button>
-				<button type="button" onclick={() => (openGenerator = false)}>Cancel</button>
+			<div class="flex gap-2">
+				<button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Add generator</button>
+				<button type="button" onclick={() => (openGenerator = false)} class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
 			</div>
 		</form>
 	{:else}
-		<button onclick={() => (openGenerator = true)} style="margin-top: 1rem">+ New generator</button>
+		<button onclick={() => (openGenerator = true)} class="mt-4 text-sm text-blue-600 hover:underline cursor-pointer">
+			+ New generator
+		</button>
 	{/if}
 </main>

@@ -64,13 +64,23 @@ Add to `Task`:
 ### ~~Step 4~~ ✓ Task visibility
 ### ~~Step 5~~ ✓ One-off task assignment
 
-### Step 6 — Snooze
-- Add `snoozedUntil DateTime?` to Task schema
-- Dashboard query filters out tasks where `snoozedUntil > now()`
-- Snooze options: later today, tomorrow, next week, pick a date
+### Step 6 — Snooze ✓
+- `snoozedUntil DateTime?` added to Task
+- Dashboard filters out snoozed tasks; presets (tomorrow, 3 days, 1 week) + date input
+- `/dashboard/snoozed` page with un-snooze
+- All times set to 9am PT via date-fns-tz
 
 ### Step 7 — Polish
-- Overdue indicators (tasks with no completedAt and createdAt is old)
 - Project/team filter on dashboard
-- Mark complete inline
+- Mark complete inline (quick checkbox, not just dropdown)
 - Completed tasks view
+
+### Step 8 — Task age color indicator
+- Tasks fade green → red based on how long they've been active (since `createdAt` or since last status change)
+- Configurable urgency window per task generator (e.g. "should be done within 3 days")
+- One-off tasks get a default urgency window (TBD — configurable at project or team level?)
+- Color computed client-side from age vs urgency window; no extra DB queries
+- Questions to answer before building:
+  - Where is urgency window configured? Per generator, per project, or per task?
+  - What's the default for one-off tasks?
+  - Does the clock reset when status changes to `in_progress`?

@@ -12,26 +12,28 @@
 	}
 </script>
 
-<main style="padding: 2rem; max-width: 640px">
-	<p><a href="/dashboard">← Back</a></p>
-	<h1>Snoozed Tasks</h1>
+<main class="p-8 max-w-2xl mx-auto">
+	<p class="mb-4"><a href="/dashboard" class="text-blue-600 hover:underline">← Back</a></p>
+	<h1 class="text-2xl font-bold mb-6">Snoozed Tasks</h1>
 
 	{#if data.tasks.length === 0}
-		<p style="color: #888">No snoozed tasks.</p>
+		<p class="text-gray-400">No snoozed tasks.</p>
 	{:else}
-		<ul style="list-style: none; padding: 0">
+		<ul class="list-none p-0">
 			{#each data.tasks as task}
-				<li style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid #eee">
+				<li class="flex items-center gap-3 py-2 border-b border-gray-100">
 					<span>{task.title}</span>
-					<span style="font-size: 0.75rem; color: #888">
+					<span class="text-xs text-gray-400">
 						{task.project.team.name} / {task.project.name}
 					</span>
-					<span style="margin-left: auto; font-size: 0.75rem; color: #888">
+					<span class="ml-auto text-xs text-gray-400 shrink-0">
 						wakes {formatWakeDate(task.snoozedUntil!)}
 					</span>
 					<form method="POST" action="?/unsnooze" use:enhance>
 						<input type="hidden" name="taskId" value={task.id} />
-						<button type="submit" style="font-size: 0.75rem; cursor: pointer">Un-snooze</button>
+						<button type="submit" class="text-xs text-blue-600 hover:underline cursor-pointer">
+							Un-snooze
+						</button>
 					</form>
 				</li>
 			{/each}
