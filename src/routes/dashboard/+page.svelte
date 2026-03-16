@@ -1,3 +1,7 @@
+<svelte:head>
+	<title>Tasks | Dashboard</title>
+</svelte:head>
+
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';

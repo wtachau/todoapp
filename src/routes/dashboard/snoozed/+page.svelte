@@ -1,3 +1,7 @@
+<svelte:head>
+	<title>Tasks | Snoozed</title>
+</svelte:head>
+
 <script lang="ts">
 	import { enhance } from '$app/forms';
 

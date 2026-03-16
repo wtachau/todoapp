@@ -3,6 +3,10 @@
 	const name = $derived(data.partner.name ?? data.partner.email);
 </script>
 
+<svelte:head>
+	<title>Tasks | {name}'s tasks</title>
+</svelte:head>
+
 <div class="flex items-baseline gap-3 mt-2 mb-6">
 	<a href="/dashboard" class="text-xs text-stone hover:text-sage transition-colors">← back</a>
 	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">{name}'s tasks · shared projects</h2>

@@ -4,6 +4,10 @@
 	const isAuthed = $derived(!!data.session?.user);
 </script>
 
+<svelte:head>
+	<title>Tasks</title>
+</svelte:head>
+
 {#if isAuthed}
 	<div class="min-h-screen bg-linen">
 		<header class="flex justify-between items-baseline px-8 py-5">

@@ -2,6 +2,10 @@
 	import { signIn } from '@auth/sveltekit/client';
 </script>
 
+<svelte:head>
+	<title>Tasks | Sign in</title>
+</svelte:head>
+
 <div class="min-h-screen bg-linen flex flex-col items-center justify-center gap-6">
 	<div class="font-serif italic text-sage text-3xl">shared tasks</div>
 	<button

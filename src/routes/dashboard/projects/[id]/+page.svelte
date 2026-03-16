@@ -19,6 +19,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Tasks | {project.name}</title>
+</svelte:head>
+
 <div class="flex items-baseline gap-3 mt-2 mb-1">
 	<a href="/dashboard" class="text-xs text-stone hover:text-sage transition-colors">← dashboard</a>
 	<span class="text-xs text-stone-light">/</span>
