@@ -9,6 +9,16 @@
 	let { data } = $props();
 	let snoozing = $state<string | null>(null);
 
+	function taskAge(createdAt: Date | string): string {
+		const ms = Date.now() - new Date(createdAt).getTime();
+		const mins = Math.floor(ms / 60000);
+		if (mins < 60) return mins <= 1 ? 'just now' : `${mins} minutes ago`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+		const days = Math.floor(hours / 24);
+		return days === 1 ? '1 day ago' : `${days} days ago`;
+	}
+
 	const filteredProject = $derived(
 		data.projectFilter ? data.allProjects.find(p => p.id === data.projectFilter) : null
 	);
@@ -153,7 +163,12 @@
 			</div>
 		</div>
 
-		<div class="w-2.5 h-2.5 rounded-full bg-sage-muted shrink-0"></div>
+		<div class="relative group shrink-0 flex items-center justify-center">
+			<div class="w-2.5 h-2.5 rounded-full bg-sage-muted cursor-default"></div>
+			<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap text-xs bg-ink text-white px-2 py-1 rounded pointer-events-none z-10">
+				Created {taskAge(task.createdAt)}
+			</div>
+		</div>
 
 		{#if task.status !== 'done'}
 			<button
