@@ -105,8 +105,9 @@ model Task {
   status      TaskStatus     @default(todo)
   projectId   String         @db.Uuid
   assignedTo  String         @db.Uuid
-  completedAt DateTime?
-  createdAt   DateTime       @default(now())
+  completedAt  DateTime?
+  snoozedUntil DateTime?
+  createdAt    DateTime       @default(now())
   generatorId String?        @db.Uuid
   project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    User           @relation(fields: [assignedTo], references: [id])
