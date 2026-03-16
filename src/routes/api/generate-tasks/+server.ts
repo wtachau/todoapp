@@ -70,7 +70,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Advance nextRunAt before creating the task so we have the correct createdAt
 		const taskCreatedAt = gen.nextRunAt;
 		const rule = RRule.fromString(gen.recurrenceRule);
-		const nextRunAt = startOfDayUTC(rule.after(gen.nextRunAt) ?? new Date());
+		// Advance from start of the day AFTER nextRunAt to avoid re-triggering the same day
+		// when DTSTART has a time component later than midnight.
+		const dayAfter = new Date(Date.UTC(
+			gen.nextRunAt.getUTCFullYear(),
+			gen.nextRunAt.getUTCMonth(),
+			gen.nextRunAt.getUTCDate() + 1
+		));
+		const nextRunAt = startOfDayUTC(rule.after(dayAfter, true) ?? dayAfter);
 
 		// Two separate inserts — no nested create (dbgenerated UUID convention)
 		const task = await prisma.task.create({
