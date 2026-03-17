@@ -126,7 +126,49 @@
 </div>
 
 {#if data.activeTasks.length === 0}
-	<p class="text-stone text-sm py-3">No active tasks.</p>
+	<div class="flex flex-col items-center py-10 gap-3 text-center">
+		<svg viewBox="0 0 200 120" class="w-56 h-auto" xmlns="http://www.w3.org/2000/svg">
+			<!-- Sky -->
+			<rect width="200" height="120" fill="#f0ece4"/>
+			<!-- Sun -->
+			<circle cx="100" cy="28" r="12" fill="#e8c84a" opacity="0.9"/>
+			<!-- Sun rays -->
+			<line x1="100" y1="10" x2="100" y2="5" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="114" y1="14" x2="118" y2="10" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="118" y1="28" x2="124" y2="28" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="114" y1="42" x2="118" y2="46" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="100" y1="46" x2="100" y2="51" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="86" y1="42" x2="82" y2="46" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="82" y1="28" x2="76" y2="28" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<line x1="86" y1="14" x2="82" y2="10" stroke="#e8c84a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+			<!-- Ground -->
+			<ellipse cx="100" cy="115" rx="90" ry="12" fill="#7a9e6e" opacity="0.3"/>
+			<!-- Tree 1 (left, tall) -->
+			<rect x="42" y="70" width="6" height="40" fill="#8a6a40"/>
+			<polygon points="45,20 25,72 65,72" fill="#3a5040"/>
+			<polygon points="45,35 28,72 62,72" fill="#4a6a50"/>
+			<polygon points="45,50 30,72 60,72" fill="#5a7a5e"/>
+			<!-- Tree 2 (right, medium) -->
+			<rect x="138" y="78" width="5" height="32" fill="#8a6a40"/>
+			<polygon points="140,32 122,80 158,80" fill="#3a5040"/>
+			<polygon points="140,46 125,80 155,80" fill="#4a6a50"/>
+			<polygon points="140,60 127,80 153,80" fill="#5a7a5e"/>
+			<!-- Tree 3 (far left, small) -->
+			<rect x="18" y="84" width="4" height="26" fill="#8a6a40"/>
+			<polygon points="20,52 6,86 34,86" fill="#4a6a50"/>
+			<polygon points="20,65 8,86 32,86" fill="#5a7a5e"/>
+			<!-- Tree 4 (far right, small) -->
+			<rect x="170" y="86" width="4" height="24" fill="#8a6a40"/>
+			<polygon points="172,56 158,88 186,88" fill="#4a6a50"/>
+			<polygon points="172,68 160,88 184,88" fill="#5a7a5e"/>
+			<!-- Light beams -->
+			<line x1="100" y1="40" x2="60" y2="110" stroke="#e8c84a" stroke-width="8" opacity="0.07"/>
+			<line x1="100" y1="40" x2="100" y2="110" stroke="#e8c84a" stroke-width="6" opacity="0.07"/>
+			<line x1="100" y1="40" x2="140" y2="110" stroke="#e8c84a" stroke-width="8" opacity="0.07"/>
+		</svg>
+		<div class="text-base font-semibold text-ink">All clear</div>
+		<div class="text-sm text-stone">Nothing left on your plate. Enjoy it.</div>
+	</div>
 {:else}
 	<div class="flex flex-col gap-1.5 mb-4">
 		{#each data.activeTasks.filter(t => !hiddenTasks.includes(t.id)) as task (task.id)}
