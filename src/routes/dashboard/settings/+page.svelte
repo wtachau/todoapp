@@ -5,6 +5,10 @@
 	let saved = $state(false);
 </script>
 
+<svelte:head>
+	<title>Tasks | Settings</title>
+</svelte:head>
+
 <div class="flex items-baseline gap-3 mt-2 mb-6">
 	<a href="/dashboard" class="text-xs text-stone hover:text-sage transition-colors">← dashboard</a>
 </div>

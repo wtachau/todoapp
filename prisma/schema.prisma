@@ -23,6 +23,8 @@ model User {
   assignedTasks        Task[]
   generatorsFixed      TaskGenerator[] @relation("FixedAssignee")
   generatorsLast       TaskGenerator[] @relation("LastAssignee")
+  defaultProjectId     String?         @db.Uuid
+  defaultProject       Project?        @relation(fields: [defaultProjectId], references: [id], onDelete: SetNull)
 }
 
 model Account {
@@ -95,9 +97,10 @@ model Project {
   name       String
   teamId     String          @db.Uuid
   team       Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  tasks      Task[]
-  generators TaskGenerator[]
-  createdAt  DateTime        @default(now())
+  tasks        Task[]
+  generators   TaskGenerator[]
+  defaultFor   User[]
+  createdAt    DateTime        @default(now())
 }
 
 model Task {

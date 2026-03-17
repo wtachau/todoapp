@@ -19,12 +19,19 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Tasks | {project.name}</title>
+</svelte:head>
+
 <div class="flex items-baseline gap-3 mt-2 mb-1">
 	<a href="/dashboard" class="text-xs text-stone hover:text-sage transition-colors">← dashboard</a>
 	<span class="text-xs text-stone-light">/</span>
-	<span class="text-xs text-stone">{project.team.name}</span>
+	<a href="/dashboard/settings" class="text-xs text-stone hover:text-sage transition-colors">{project.team.name}</a>
+	<span class="text-xs text-stone-light">/</span>
+	<span class="text-xs text-stone">{project.name}</span>
 </div>
-<h1 class="text-xl font-semibold text-ink mb-6">{project.name}</h1>
+<h1 class="text-xl font-semibold text-ink mb-1">{project.name}</h1>
+<div class="text-xs text-stone-muted mb-6">Tasks · {project.team.name}</div>
 
 <!-- Tasks -->
 <div class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-2">Tasks</div>

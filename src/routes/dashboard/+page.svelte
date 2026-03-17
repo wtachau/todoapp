@@ -1,9 +1,12 @@
+<svelte:head>
+	<title>Tasks | Dashboard</title>
+</svelte:head>
+
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
 
 	let { data } = $props();
-	let creatingFor = $state<string | null>(null);
 	let snoozing = $state<string | null>(null);
 
 	function ageColor(createdAt: Date | string): string {
@@ -16,6 +19,20 @@
 		const lightness = 42 - ratio * 10;
 		return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 	}
+
+	function taskAge(createdAt: Date | string): string {
+		const ms = Date.now() - new Date(createdAt).getTime();
+		const mins = Math.floor(ms / 60000);
+		if (mins < 60) return mins <= 1 ? 'just now' : `${mins} minutes ago`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+		const days = Math.floor(hours / 24);
+		return days === 1 ? '1 day ago' : `${days} days ago`;
+	}
+
+	const filteredProject = $derived(
+		data.projectFilter ? data.allProjects.find(p => p.id === data.projectFilter) : null
+	);
 
 	function filterUrl(params: Record<string, string | null>) {
 		const u = new URL($page.url);
@@ -51,9 +68,34 @@
 	</div>
 {/if}
 
+<!-- Quick add -->
+<form method="POST" action="?/createTask" use:enhance={() => async ({ update }) => { await update({ reset: true }); }} class="flex gap-2 mb-6">
+	<input
+		name="title"
+		placeholder="Add a task…"
+		required
+		class="flex-1 border border-stone-light rounded-md px-3 py-2 text-sm bg-card focus:border-sage focus:outline-none"
+	/>
+	<select
+		name="projectId"
+		class="border border-stone-light rounded-md px-2 py-2 text-sm bg-card focus:border-sage focus:outline-none"
+	>
+		{#each data.accessibleProjects as project}
+			<option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
+		{/each}
+	</select>
+	<button type="submit" class="px-4 py-2 bg-sage text-white text-sm rounded-md hover:bg-sage/90 cursor-pointer">Add</button>
+</form>
+
 <!-- Active tasks -->
 <div class="flex justify-between items-baseline mb-2 mt-2">
-	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">My Tasks</h2>
+	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">
+		{#if filteredProject}
+			{filteredProject.name}
+		{:else}
+			My Tasks
+		{/if}
+	</h2>
 </div>
 
 {#if data.activeTasks.length === 0}
@@ -100,43 +142,6 @@
 	</div>
 {/each}
 
-<hr class="border-stone-light my-6" />
-
-<!-- Projects -->
-<div class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-3">Projects</div>
-
-{#each data.teams as team}
-	<div class="mb-6">
-		<div class="text-xs font-bold tracking-wide text-stone uppercase mb-2">{team.name}</div>
-
-		{#each team.projects as project}
-			<div class="mb-1">
-				<a href="/dashboard/projects/{project.id}" class="text-sm text-sage hover:underline">
-					{project.name}
-				</a>
-			</div>
-		{/each}
-
-		{#if creatingFor === team.id}
-			<form method="POST" action="?/createProject" use:enhance class="flex gap-2 mt-2">
-				<input type="hidden" name="teamId" value={team.id} />
-				<input
-					name="name"
-					placeholder="Project name"
-					required
-					autofocus
-					class="flex-1 border border-stone-light rounded px-3 py-1.5 text-sm bg-white focus:border-sage focus:outline-none"
-				/>
-				<button type="submit" class="px-3 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer">Add</button>
-				<button type="button" onclick={() => (creatingFor = null)} class="px-3 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
-			</form>
-		{:else}
-			<button onclick={() => (creatingFor = team.id)} class="mt-1 text-xs text-stone hover:text-sage transition-colors cursor-pointer">
-				+ New project
-			</button>
-		{/if}
-	</div>
-{/each}
 
 {#snippet taskCard(task: typeof data.activeTasks[0])}
 	<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors">
@@ -169,7 +174,12 @@
 			</div>
 		</div>
 
-		<div class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {ageColor(task.createdAt)}"></div>
+		<div class="relative group shrink-0 flex items-center justify-center">
+			<div class="w-2.5 h-2.5 rounded-full cursor-default" style="background-color: {ageColor(task.createdAt)}"></div>
+			<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap text-xs bg-ink text-white px-2 py-1 rounded pointer-events-none z-10">
+				Created {taskAge(task.createdAt)}
+			</div>
+		</div>
 
 		{#if task.status !== 'done'}
 			<button

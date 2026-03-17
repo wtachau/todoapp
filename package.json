@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "vite dev",
-    "dev:local": "concurrently -n vite,cron -c cyan,yellow \"vite dev\" \"node scripts/cron-local.mjs\"",
+    "dev": "prisma migrate deploy && vite dev",
+    "dev:local": "prisma migrate deploy && concurrently -n vite,cron -c cyan,yellow \"vite dev\" \"node scripts/cron-local.mjs\"",
     "build": "prisma migrate deploy && vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

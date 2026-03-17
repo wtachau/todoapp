@@ -20,6 +20,8 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 			if (!user.id) return;
 			const team = await prisma.team.create({ data: { name: 'Personal' } });
 			await prisma.teamMember.create({ data: { teamId: team.id, userId: user.id } });
+			const project = await prisma.project.create({ data: { name: 'Personal', teamId: team.id } });
+			await prisma.user.update({ where: { id: user.id }, data: { defaultProjectId: project.id } });
 		}
 	}
 });
