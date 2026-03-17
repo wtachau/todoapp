@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		project: { include: { team: { include: { members: true } } } }
 	};
 
-	const [activeTasks, doneTasks, teams] = await Promise.all([
+	const [activeTasks, doneTasks, teams, user] = await Promise.all([
 		prisma.task.findMany({
 			where: { ...baseWhere, status: { not: 'done' } },
 			include: taskInclude,
@@ -48,7 +48,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				projects: { orderBy: { createdAt: 'desc' } },
 				members: { include: { user: true } }
 			}
-		})
+		}),
+		prisma.user.findUnique({ where: { id: userId }, select: { urgencyDays: true } })
 	]);
 
 	// Distinct projects from active tasks (for filter chips)
@@ -63,7 +64,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.flatMap((t) => t.members.filter((m) => m.userId !== userId).map((m) => m.user))
 		.filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i);
 
-	return { activeTasks, doneTasks, allProjects, teams, partners, showDone, projectFilter };
+	return { activeTasks, doneTasks, allProjects, teams, partners, showDone, projectFilter, urgencyDays: user?.urgencyDays ?? 3 };
 };
 
 export const actions: Actions = {

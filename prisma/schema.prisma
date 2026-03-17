@@ -16,6 +16,7 @@ model User {
   email         String?      @unique
   emailVerified DateTime?
   image         String?
+  urgencyDays          Int             @default(3)
   accounts             Account[]
   sessions             Session[]
   teams                TeamMember[]

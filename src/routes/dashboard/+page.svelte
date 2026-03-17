@@ -6,6 +6,17 @@
 	let creatingFor = $state<string | null>(null);
 	let snoozing = $state<string | null>(null);
 
+	function ageColor(createdAt: Date | string): string {
+		const ageMs = Date.now() - new Date(createdAt).getTime();
+		const urgencyMs = data.urgencyDays * 24 * 60 * 60 * 1000;
+		const ratio = Math.min(ageMs / urgencyMs, 1);
+		// green (hue 120) → amber (hue 40) → red (hue 0)
+		const hue = ratio < 0.5 ? 120 - ratio * 2 * 80 : 40 - (ratio - 0.5) * 2 * 40;
+		const saturation = 45 + ratio * 25;
+		const lightness = 42 - ratio * 10;
+		return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+	}
+
 	function filterUrl(params: Record<string, string | null>) {
 		const u = new URL($page.url);
 		for (const [k, v] of Object.entries(params)) {
@@ -158,7 +169,7 @@
 			</div>
 		</div>
 
-		<div class="w-2.5 h-2.5 rounded-full bg-sage-muted shrink-0"></div>
+		<div class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {ageColor(task.createdAt)}"></div>
 
 		{#if task.status !== 'done'}
 			<button
