@@ -5,6 +5,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/stores';
+	import { toast } from '$lib/toast.svelte.ts';
 
 	let { data } = $props();
 	let snoozing = $state<string | null>(null);
@@ -33,6 +34,27 @@
 	const filteredProject = $derived(
 		data.projectFilter ? data.allProjects.find(p => p.id === data.projectFilter) : null
 	);
+
+	function snoozeEnhance() {
+		return ({ formData }: { formData: FormData }) => {
+			const preset = formData.get('preset') as string | null;
+			const customDate = formData.get('customDate') as string | null;
+			let msg = 'Snoozed';
+			if (preset === 'tomorrow') msg = 'Snoozed until tomorrow';
+			else if (preset === '3days') msg = 'Snoozed for 3 days';
+			else if (preset === '1week') msg = 'Snoozed for a week';
+			else if (customDate) {
+				const [y, m, d] = customDate.split('-').map(Number);
+				const date = new Date(y, m - 1, d);
+				msg = `Snoozed until ${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+			}
+			return async ({ update }: { update: () => Promise<void> }) => {
+				snoozing = null;
+				await update();
+				toast(msg);
+			};
+		};
+	}
 
 	function filterUrl(params: Record<string, string | null>) {
 		const u = new URL($page.url);
@@ -69,22 +91,24 @@
 {/if}
 
 <!-- Quick add -->
-<form method="POST" action="?/createTask" use:enhance={() => async ({ update }) => { await update({ reset: true }); }} class="flex gap-2 mb-6">
+<form method="POST" action="?/createTask" use:enhance={() => async ({ update }) => { await update({ reset: true }); toast('Task added'); }} class="flex flex-col sm:flex-row gap-2 mb-6">
 	<input
 		name="title"
 		placeholder="Add a task…"
 		required
 		class="flex-1 border border-stone-light rounded-md px-3 py-2 text-sm bg-card focus:border-sage focus:outline-none"
 	/>
-	<select
-		name="projectId"
-		class="border border-stone-light rounded-md px-2 py-2 text-sm bg-card focus:border-sage focus:outline-none"
-	>
-		{#each data.accessibleProjects as project}
-			<option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
-		{/each}
-	</select>
-	<button type="submit" class="px-4 py-2 bg-sage text-white text-sm rounded-md hover:bg-sage/90 cursor-pointer">Add</button>
+	<div class="flex gap-2">
+		<select
+			name="projectId"
+			class="border border-stone-light rounded-md px-2 py-2 text-sm bg-card focus:border-sage focus:outline-none w-20 sm:w-auto"
+		>
+			{#each data.accessibleProjects as project}
+				<option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
+			{/each}
+		</select>
+		<button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-sage text-white text-sm rounded-md hover:bg-sage/90 cursor-pointer">Add</button>
+	</div>
 </form>
 
 <!-- Active tasks -->
@@ -145,7 +169,13 @@
 
 {#snippet taskCard(task: typeof data.activeTasks[0])}
 	<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors">
-		<form method="POST" action="?/updateStatus" use:enhance style="display: contents">
+		<form method="POST" action="?/updateStatus" use:enhance={() => async ({ update }) => {
+			if (task.status !== 'done' && task.generator?.nextRunAt) {
+				const next = new Date(task.generator.nextRunAt);
+				toast(`Done · repeats ${next.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`);
+			}
+			await update();
+		}} style="display: contents">
 			<input type="hidden" name="taskId" value={task.id} />
 			<input type="hidden" name="status" value={task.status === 'done' ? 'todo' : 'done'} />
 			<button type="submit"
@@ -195,20 +225,22 @@
 	</div>
 
 	{#if snoozing === task.id}
-		<div class="flex gap-2 flex-wrap px-1 text-xs mb-1">
-			{#each [['tomorrow', 'Tomorrow'], ['3days', 'In 3 days'], ['1week', '1 week']] as [preset, label]}
-				<form method="POST" action="?/snooze" use:enhance={() => async ({ update }) => { snoozing = null; await update(); }}>
-					<input type="hidden" name="taskId" value={task.id} />
-					<input type="hidden" name="preset" value={preset} />
-					<button type="submit" class="px-2.5 py-1 bg-stone-lighter hover:bg-stone-light rounded cursor-pointer transition-colors">
-						{label}
-					</button>
-				</form>
-			{/each}
-			<form method="POST" action="?/snooze" use:enhance={() => async ({ update }) => { snoozing = null; await update(); }} class="flex gap-1">
+		<div class="flex flex-col gap-2 px-1 text-xs mb-1">
+			<div class="flex gap-2">
+				{#each [['tomorrow', 'Tomorrow'], ['3days', 'In 3 days'], ['1week', '1 week']] as [preset, label]}
+					<form method="POST" action="?/snooze" use:enhance={snoozeEnhance()} class="flex-1">
+						<input type="hidden" name="taskId" value={task.id} />
+						<input type="hidden" name="preset" value={preset} />
+						<button type="submit" class="w-full py-2 bg-stone-light hover:bg-stone/40 rounded cursor-pointer transition-colors">
+							{label}
+						</button>
+					</form>
+				{/each}
+			</div>
+			<form method="POST" action="?/snooze" use:enhance={snoozeEnhance()} class="flex gap-2">
 				<input type="hidden" name="taskId" value={task.id} />
-				<input type="date" name="customDate" required class="text-xs border border-stone-light rounded px-2 bg-white" />
-				<button type="submit" class="px-2.5 py-1 bg-stone-lighter hover:bg-stone-light rounded cursor-pointer transition-colors">
+				<input type="date" name="customDate" required class="flex-1 border border-stone-light rounded px-2 py-2 bg-white" />
+				<button type="submit" class="px-3 py-2 bg-stone-light hover:bg-stone/40 rounded cursor-pointer transition-colors whitespace-nowrap">
 					Snooze until →
 				</button>
 			</form>

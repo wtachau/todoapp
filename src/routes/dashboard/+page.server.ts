@@ -26,7 +26,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 
 	const taskInclude = {
-		project: { include: { team: { include: { members: true } } } }
+		project: { include: { team: { include: { members: true } } } },
+		generator: { select: { nextRunAt: true } }
 	};
 
 	const [activeTasks, doneTasks, teams, currentUser] = await Promise.all([
