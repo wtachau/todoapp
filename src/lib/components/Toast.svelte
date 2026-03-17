@@ -3,7 +3,7 @@
 </script>
 
 {#if toastState.message}
-	<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-ink text-white text-sm rounded-lg shadow-lg pointer-events-none"
+	<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-ink text-white text-sm rounded-lg shadow-lg pointer-events-none whitespace-nowrap"
 		style="animation: fadeup 0.15s ease-out">
 		{toastState.message}
 	</div>

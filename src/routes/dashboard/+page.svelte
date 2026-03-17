@@ -131,7 +131,7 @@
 	<div class="flex flex-col gap-1.5 mb-4">
 		{#each data.activeTasks.filter(t => !hiddenTasks.includes(t.id)) as task (task.id)}
 			<div class="transition-all duration-250 ease-out overflow-hidden"
-				style={collapsing === task.id ? 'opacity: 0; max-height: 0; margin: 0' : 'opacity: 1; max-height: 300px'}>
+				style={collapsing === task.id ? 'opacity: 0; max-height: 0; margin: 0' : 'opacity: 1; max-height: 600px'}>
 				{@render taskCard(task)}
 			</div>
 		{/each}
@@ -241,7 +241,7 @@
 	</div>
 
 	{#if snoozing === task.id}
-		<div class="flex flex-col gap-2 px-1 text-xs mb-1">
+		<div class="flex flex-col gap-2 px-1 text-xs mt-2 mb-2">
 			<div class="flex gap-2">
 				{#each [['tomorrow', 'Tomorrow'], ['3days', 'In 3 days'], ['1week', '1 week']] as [preset, label]}
 					<form method="POST" action="?/snooze" use:enhance={snoozeEnhance()} class="flex-1">
