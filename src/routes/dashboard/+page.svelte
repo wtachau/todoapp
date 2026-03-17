@@ -9,6 +9,9 @@
 
 	let { data } = $props();
 	let snoozing = $state<string | null>(null);
+	let completing = $state<string | null>(null);
+	let collapsing = $state<string | null>(null);
+	let hiddenTasks = $state<string[]>([]);
 
 	function ageColor(createdAt: Date | string): string {
 		const ageMs = Date.now() - new Date(createdAt).getTime();
@@ -126,8 +129,11 @@
 	<p class="text-stone text-sm py-3">No active tasks.</p>
 {:else}
 	<div class="flex flex-col gap-1.5 mb-4">
-		{#each data.activeTasks as task}
-			{@render taskCard(task)}
+		{#each data.activeTasks.filter(t => !hiddenTasks.includes(t.id)) as task (task.id)}
+			<div class="transition-all duration-250 ease-out overflow-hidden"
+				style={collapsing === task.id ? 'opacity: 0; max-height: 0; margin: 0' : 'opacity: 1; max-height: 300px'}>
+				{@render taskCard(task)}
+			</div>
 		{/each}
 	</div>
 {/if}
@@ -169,23 +175,33 @@
 
 {#snippet taskCard(task: typeof data.activeTasks[0])}
 	<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors">
-		<form method="POST" action="?/updateStatus" use:enhance={() => async ({ update }) => {
-			if (task.status !== 'done' && task.generator?.nextRunAt) {
-				const next = new Date(task.generator.nextRunAt);
-				toast(`Done · repeats ${next.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`);
-			}
-			await update();
+		<form method="POST" action="?/updateStatus" use:enhance={() => {
+			const isCompleting = task.status !== 'done';
+			return async ({ update }) => {
+				if (isCompleting) {
+					completing = task.id;
+					await new Promise(r => setTimeout(r, 500));
+					collapsing = task.id;
+					await new Promise(r => setTimeout(r, 250));
+					if (task.generator?.nextRunAt) {
+						const next = new Date(task.generator.nextRunAt);
+						toast(`Done · repeats ${next.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}`);
+					}
+					hiddenTasks = [...hiddenTasks, task.id];
+				}
+				await update();
+			};
 		}} style="display: contents">
 			<input type="hidden" name="taskId" value={task.id} />
 			<input type="hidden" name="status" value={task.status === 'done' ? 'todo' : 'done'} />
 			<button type="submit"
 				class="w-5 h-5 rounded border flex items-center justify-center text-xs cursor-pointer hover:border-sage transition-colors shrink-0"
-				class:bg-sage={task.status === 'done'}
-				class:border-sage={task.status === 'done'}
-				class:text-white={task.status === 'done'}
-				class:border-stone-light={task.status !== 'done'}
+				class:bg-sage={task.status === 'done' || completing === task.id}
+				class:border-sage={task.status === 'done' || completing === task.id}
+				class:text-white={task.status === 'done' || completing === task.id}
+				class:border-stone-light={task.status !== 'done' && completing !== task.id}
 			>
-				{#if task.status === 'done'}✓{/if}
+				{#if task.status === 'done' || completing === task.id}✓{/if}
 			</button>
 		</form>
 
