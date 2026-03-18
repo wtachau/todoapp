@@ -237,6 +237,7 @@
 			<input type="hidden" name="taskId" value={task.id} />
 			<input type="hidden" name="status" value={task.status === 'done' ? 'todo' : 'done'} />
 			<button type="submit"
+				onmousedown={() => { if (task.status !== 'done') completing = task.id; }}
 				class="w-5 h-5 rounded border flex items-center justify-center text-xs cursor-pointer hover:border-sage transition-colors shrink-0"
 				class:bg-sage={task.status === 'done' || completing === task.id}
 				class:border-sage={task.status === 'done' || completing === task.id}
