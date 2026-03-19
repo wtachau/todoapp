@@ -1,10 +1,10 @@
 import { prisma } from '$lib/server/prisma';
+import { getUserId } from '$lib/server/auth';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-	const session = await locals.auth();
-	const myUserId = session!.user!.id!;
+	const myUserId = await getUserId(locals);
 	const partnerId = params.id;
 	const showDone = url.searchParams.get('showDone') === 'true';
 
@@ -21,8 +21,9 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 	const sharedTeamIds = sharedTeams.map((t) => t.id);
 
-	const [partner, tasks] = await Promise.all([
+	const [partner, me, tasks] = await Promise.all([
 		prisma.user.findUnique({ where: { id: partnerId }, select: { name: true, email: true } }),
+		prisma.user.findUnique({ where: { id: myUserId }, select: { urgencyDays: true } }),
 		prisma.task.findMany({
 			where: {
 				assignedTo: partnerId,
@@ -38,5 +39,5 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 
 	if (!partner) error(404, 'User not found');
 
-	return { partner, tasks, showDone };
+	return { partner, tasks, showDone, urgencyDays: me?.urgencyDays ?? 7 };
 };

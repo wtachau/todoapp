@@ -1,4 +1,6 @@
 import { prisma } from '$lib/server/prisma';
+import { getUserId } from '$lib/server/auth';
+import { projectWithMembers, taskWithProjectMembers } from '$lib/server/queries';
 import { error, fail } from '@sveltejs/kit';
 import pkg from 'rrule';
 const { RRule } = pkg;
@@ -9,8 +11,7 @@ function startOfDayUTC(date: Date): Date {
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const session = await locals.auth();
-	const userId = session!.user!.id!;
+	const userId = await getUserId(locals);
 
 	const project = await prisma.project.findUnique({
 		where: { id: params.id },
@@ -64,7 +65,7 @@ export const actions: Actions = {
 
 		const project = await prisma.project.findUnique({
 			where: { id: params.id },
-			include: { team: { include: { members: true } } }
+			include: projectWithMembers
 		});
 		if (!project) throw error(404);
 
@@ -85,7 +86,7 @@ export const actions: Actions = {
 
 		const task = await prisma.task.findUnique({
 			where: { id: taskId },
-			include: { project: { include: { team: { include: { members: true } } } } }
+			include: taskWithProjectMembers
 		});
 		if (!task) throw error(404);
 
@@ -110,7 +111,7 @@ export const actions: Actions = {
 
 		const task = await prisma.task.findUnique({
 			where: { id: taskId },
-			include: { project: { include: { team: { include: { members: true } } } } }
+			include: taskWithProjectMembers
 		});
 		if (!task) throw error(404);
 
@@ -143,7 +144,7 @@ export const actions: Actions = {
 
 		const project = await prisma.project.findUnique({
 			where: { id: params.id },
-			include: { team: { include: { members: true } } }
+			include: projectWithMembers
 		});
 		if (!project) throw error(404);
 
@@ -201,7 +202,7 @@ export const actions: Actions = {
 
 		const generator = await prisma.taskGenerator.findUnique({
 			where: { id: generatorId },
-			include: { project: { include: { team: { include: { members: true } } } } }
+			include: taskWithProjectMembers
 		});
 		if (!generator) throw error(404);
 

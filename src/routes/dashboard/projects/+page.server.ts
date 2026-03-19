@@ -1,10 +1,10 @@
 import { prisma } from '$lib/server/prisma';
+import { getUserId } from '$lib/server/auth';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const session = await locals.auth();
-	const userId = session!.user!.id!;
+	const userId = await getUserId(locals);
 
 	const teams = await prisma.team.findMany({
 		where: { members: { some: { userId } } },

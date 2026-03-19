@@ -2,6 +2,7 @@
   import { enhance } from "$app/forms";
   import { page } from "$app/stores";
   import { toast } from "$lib/toast.svelte.ts";
+  import { ageColor as _ageColor, taskAge, formatNextRun } from '$lib/taskUtils';
 
   let { data } = $props();
   let snoozing = $state<string | null>(null);
@@ -9,27 +10,7 @@
   let collapsing = $state<string | null>(null);
   let hiddenTasks = $state<string[]>([]);
 
-  function ageColor(createdAt: Date | string): string {
-    const ageMs = Date.now() - new Date(createdAt).getTime();
-    const urgencyMs = data.urgencyDays * 24 * 60 * 60 * 1000;
-    const ratio = Math.min(ageMs / urgencyMs, 1);
-    // green (hue 120) → amber (hue 40) → red (hue 0)
-    const hue =
-      ratio < 0.5 ? 120 - ratio * 2 * 80 : 40 - (ratio - 0.5) * 2 * 40;
-    const saturation = 45 + ratio * 25;
-    const lightness = 42 - ratio * 10;
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-  }
-
-  function taskAge(createdAt: Date | string): string {
-    const ms = Date.now() - new Date(createdAt).getTime();
-    const mins = Math.floor(ms / 60000);
-    if (mins < 60) return mins <= 1 ? "just now" : `${mins} minutes ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
-    const days = Math.floor(hours / 24);
-    return days === 1 ? "1 day ago" : `${days} days ago`;
-  }
+  const ageColor = (createdAt: Date | string) => _ageColor(createdAt, data.urgencyDays);
 
   const filteredProject = $derived(
     data.projectFilter
@@ -375,7 +356,7 @@
             if (task.generator?.nextRunAt) {
               const next = new Date(task.generator.nextRunAt);
               toast(
-                `Done · repeats ${next.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`,
+                `Done · repeats ${formatNextRun(next)}`,
               );
             }
             hiddenTasks = [...hiddenTasks, task.id];

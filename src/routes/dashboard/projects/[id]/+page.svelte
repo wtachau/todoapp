@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { formatNextRun } from '$lib/taskUtils';
 
 	let { data } = $props();
 	let { project } = $derived(data);
@@ -14,9 +15,6 @@
 		MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun'
 	};
 
-	function formatNextRun(d: Date | string) {
-		return new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-	}
 </script>
 
 <svelte:head>

@@ -1,4 +1,6 @@
 import { prisma } from '$lib/server/prisma';
+import { getUserId } from '$lib/server/auth';
+import { projectWithMembers } from '$lib/server/queries';
 import { fail } from '@sveltejs/kit';
 import { fromZonedTime } from 'date-fns-tz';
 import type { Actions, PageServerLoad } from './$types';
@@ -12,8 +14,7 @@ function at9amPT(daysFromNow: number): Date {
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const session = await locals.auth();
-	const userId = session!.user!.id!;
+	const userId = await getUserId(locals);
 	const showDone = url.searchParams.get('showDone') === 'true';
 	const projectFilter = url.searchParams.get('project') ?? null;
 
@@ -94,7 +95,7 @@ export const actions: Actions = {
 
 		const project = await prisma.project.findUnique({
 			where: { id: projectId },
-			include: { team: { include: { members: true } } }
+			include: projectWithMembers
 		});
 		if (!project) return fail(404, { error: 'Project not found' });
 		if (!project.team.members.some((m) => m.userId === userId))
