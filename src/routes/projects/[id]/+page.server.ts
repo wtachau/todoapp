@@ -35,7 +35,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const isMember = project.team.members.some((m) => m.userId === userId);
 	if (!isMember) throw error(403, 'Forbidden');
 
-	return { project };
+	const generators = project.generators.map((g) => ({
+		...g,
+		rruleText: (() => {
+			try { return RRule.fromString(g.recurrenceRule.replace('RRULE:', '')).toText(); }
+			catch { return g.recurrenceRule.replace('RRULE:', ''); }
+		})()
+	}));
+
+	return { project: { ...project, generators } };
 };
 
 const DAY_MAP: Record<string, number> = {

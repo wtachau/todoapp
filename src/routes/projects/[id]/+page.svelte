@@ -192,12 +192,15 @@
 			{:else}
 				<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 flex items-center gap-3 hover:border-stone transition-colors">
 					<div class="flex-1">
-						<div class="text-sm font-medium">{gen.title}</div>
+						<div class="text-sm font-medium flex items-baseline gap-1.5">
+							{gen.title}
+							<span class="text-stone-light font-normal text-xs">·</span>
+							<span class="text-stone font-normal text-xs">{gen.rruleText}</span>
+						</div>
 						<div class="text-xs text-stone mt-0.5">
 							{gen.assignmentMode === 'fixed'
 								? `always → ${gen.fixedAssignee?.name ?? gen.fixedAssignee?.email ?? '?'}`
 								: 'round-robin'}
-							· {gen.recurrenceRule.replace('RRULE:', '')}
 							· next: {formatNextRun(gen.nextRunAt)}
 						</div>
 					</div>
