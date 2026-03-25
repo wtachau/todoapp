@@ -568,7 +568,7 @@
           title={task.status === TaskStatus.in_progress
             ? "Mark as to do"
             : "Mark as in progress"}
-          class="text-[11px] tracking-wide border rounded px-2.5 py-1 cursor-pointer whitespace-nowrap transition-colors"
+          class="border rounded-lg p-1 w-9 h-9 flex items-center justify-center cursor-pointer transition-colors"
           class:border-blue-300={task.status === TaskStatus.in_progress}
           class:text-blue-500={task.status === TaskStatus.in_progress}
           class:bg-blue-50={task.status === TaskStatus.in_progress}
@@ -576,14 +576,14 @@
           class:text-stone={task.status !== TaskStatus.in_progress}
           class:hover:border-blue-300={task.status !== TaskStatus.in_progress}
           class:hover:text-blue-500={task.status !== TaskStatus.in_progress}
-          >▶</button
+          ><i class="fa-regular fa-circle-play"></i></button
         >
       </form>
       <button
         type="button"
         onclick={() => (snoozing = snoozing === task.id ? null : task.id)}
         title={snoozing === task.id ? "Cancel" : "Snooze"}
-        class="border rounded p-1.5 cursor-pointer transition-colors"
+        class="border rounded-lg p-1 w-9 h-9 flex items-center justify-center cursor-pointer transition-colors"
         class:border-sage={snoozing === task.id}
         class:text-sage={snoozing === task.id}
         class:border-stone-light={snoozing !== task.id}
@@ -591,23 +591,7 @@
         class:hover:border-sage={snoozing !== task.id}
         class:hover:text-sage={snoozing !== task.id}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path
-            d="M5 3 2 6"
-          /><path d="m22 6-3-3" /><path d="M6.38 18.7 4 21" /><path
-            d="M17.64 18.67 20 21"
-          />
-        </svg>
+        <i class="fa-regular fa-clock"></i>
       </button>
     {:else}
       <div></div>
