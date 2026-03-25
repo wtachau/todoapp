@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { ageColor as _ageColor, taskAge } from '$lib/taskUtils';
+	import { ageColor as _ageColor } from '$lib/taskUtils';
+	import AgeDot from '$lib/components/AgeDot.svelte';
 
 	let { data } = $props();
 	const name = $derived(data.partner.name ?? data.partner.email);
@@ -9,6 +10,9 @@
 	let scheduling = $state(false);
 	let scheduledDate = $state('');
 	let dropdownOpen = $state(false);
+
+	const inProgressTasks = $derived(data.tasks.filter((t) => t.status === 'in_progress'));
+	const todoTasks = $derived(data.tasks.filter((t) => t.status === 'todo'));
 </script>
 
 <svelte:head>
@@ -80,33 +84,39 @@
 	</div>
 </form>
 
+{#snippet taskRow(task: typeof data.tasks[0])}
+	<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 flex items-center gap-3 hover:border-stone transition-colors"
+		class:opacity-50={task.status === 'done'}>
+		<AgeDot createdAt={task.createdAt} color={ageColor(task.createdAt)} />
+		<div class="flex-1">
+			<div class="text-sm" class:line-through={task.status === 'done'} class:text-stone={task.status === 'done'}>
+				{task.title}
+			</div>
+			<div class="flex gap-1 mt-1 flex-wrap items-center">
+				<span class="text-xs text-stone">{new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+				<span class="text-xs text-stone">·</span>
+				<span class="text-[10px] font-bold tracking-[0.07em] uppercase px-2 py-0.5 rounded-full bg-stone-lighter text-stone">{task.project.name}</span>
+			</div>
+		</div>
+	</div>
+{/snippet}
+
+{#if inProgressTasks.length > 0}
+	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-2">In Progress</h2>
+	<div class="flex flex-col gap-1.5 mb-4">
+		{#each inProgressTasks as task}{@render taskRow(task)}{/each}
+	</div>
+{/if}
+
+{#if todoTasks.length > 0}
+	<h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-2">To Do</h2>
+	<div class="flex flex-col gap-1.5 mb-4">
+		{#each todoTasks as task}{@render taskRow(task)}{/each}
+	</div>
+{/if}
+
 {#if data.tasks.length === 0}
 	<p class="text-stone text-sm py-4">No tasks.</p>
-{:else}
-	<div class="flex flex-col gap-1.5 mb-6">
-		{#each data.tasks as task}
-			<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 flex items-center gap-3 hover:border-stone transition-colors"
-				class:opacity-50={task.status === 'done'}>
-				<div class="relative group shrink-0 flex items-center justify-center">
-					<div class="w-2.5 h-2.5 rounded-full cursor-default" style="background-color: {ageColor(task.createdAt)}"></div>
-					<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap text-xs bg-ink text-white px-2 py-1 rounded pointer-events-none z-10">
-						Created {taskAge(task.createdAt)}
-					</div>
-				</div>
-				<div class="flex-1">
-					<div class="text-sm" class:line-through={task.status === 'done'} class:text-stone={task.status === 'done'}>
-						{task.title}
-					</div>
-					<div class="flex gap-1 mt-1 flex-wrap">
-						<span class="text-[10px] font-bold tracking-[0.07em] uppercase px-2 py-0.5 rounded-full bg-stone-lighter text-stone">{task.project.name}</span>
-					</div>
-				</div>
-				<span class="text-xs text-stone shrink-0">
-					{task.status === 'todo' ? 'to do' : task.status === 'in_progress' ? 'in progress' : 'done'}
-				</span>
-			</div>
-		{/each}
-	</div>
 {/if}
 
 <a href="?showDone={!data.showDone}" class="text-xs text-stone hover:text-sage transition-colors">

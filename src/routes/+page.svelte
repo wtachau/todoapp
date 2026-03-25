@@ -1,29 +1,45 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { TaskStatus } from "@prisma/client";
   import { page } from "$app/stores";
   import { toast } from "$lib/toast.svelte";
-  import { ageColor as _ageColor, taskAge, formatNextRun } from '$lib/taskUtils';
-
+  import {
+    ageColor as _ageColor,
+    taskAge,
+    formatNextRun,
+  } from "$lib/taskUtils";
+  import AgeDot from "$lib/components/AgeDot.svelte";
   let { data } = $props();
   let snoozing = $state<string | null>(null);
   let scheduling = $state(false);
-  let scheduledDate = $state('');
+  let scheduledDate = $state("");
   let dropdownOpen = $state(false);
   let completing = $state<string | null>(null);
   let collapsing = $state<string | null>(null);
   let hiddenTasks = $state<string[]>([]);
 
-  const ageColor = (createdAt: Date | string) => _ageColor(createdAt, data.urgencyDays);
+  const ageColor = (createdAt: Date | string) =>
+    _ageColor(createdAt, data.urgencyDays);
 
   let activeFilter = $state<string | null>(null);
   const filteredProject = $derived(
-    activeFilter ? data.allProjects.find((p) => p.id === activeFilter) : null
+    activeFilter ? data.allProjects.find((p) => p.id === activeFilter) : null,
   );
   const filteredActiveTasks = $derived(
-    activeFilter ? data.activeTasks.filter((t) => t.projectId === activeFilter) : data.activeTasks
+    activeFilter
+      ? data.activeTasks.filter((t) => t.projectId === activeFilter)
+      : data.activeTasks,
+  );
+  const filteredTodoTasks = $derived(
+    filteredActiveTasks.filter((t) => t.status !== TaskStatus.in_progress),
+  );
+  const filteredInProgressTasks = $derived(
+    filteredActiveTasks.filter((t) => t.status === TaskStatus.in_progress),
   );
   const filteredDoneTasks = $derived(
-    activeFilter ? data.doneTasks.filter((t) => t.projectId === activeFilter) : data.doneTasks
+    activeFilter
+      ? data.doneTasks.filter((t) => t.projectId === activeFilter)
+      : data.doneTasks,
   );
 
   function snoozeEnhance() {
@@ -70,7 +86,7 @@
     const wasScheduling = scheduling;
     return async ({ update }) => {
       scheduling = false;
-      scheduledDate = '';
+      scheduledDate = "";
       await update({ reset: true });
       toast(wasScheduling ? "Task scheduled" : "Task added");
     };
@@ -85,15 +101,24 @@
         class="text-xs text-ink bg-card border border-stone rounded-full pl-3 pr-6 py-1 focus:outline-none cursor-pointer hover:border-ink transition-colors appearance-none"
       >
         {#each data.accessibleProjects as project}
-          <option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
+          <option
+            value={project.id}
+            selected={project.id === data.defaultProjectId}
+            >{project.name}</option
+          >
         {/each}
       </select>
-      <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink text-[10px]">▾</span>
+      <span
+        class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink text-[10px]"
+        >▾</span
+      >
     </div>
   </div>
 
   <div class="relative">
-    <div class="flex items-stretch border border-stone-light rounded-md bg-card focus-within:border-sage transition-colors overflow-hidden">
+    <div
+      class="flex items-stretch border border-stone-light rounded-md bg-card focus-within:border-sage transition-colors overflow-hidden"
+    >
       <!-- Text input -->
       <input
         name="title"
@@ -109,7 +134,7 @@
           name="scheduledFor"
           bind:value={scheduledDate}
           required
-          min={new Date().toISOString().split('T')[0]}
+          min={new Date().toISOString().split("T")[0]}
           class="w-32 px-2 py-2.5 text-sm bg-transparent border-l border-stone-light focus:outline-none cursor-pointer"
           class:text-sage={scheduledDate}
           class:text-stone-light={!scheduledDate}
@@ -121,61 +146,132 @@
         <button
           type="submit"
           class="px-4 text-sm text-sage font-medium hover:bg-sage-light cursor-pointer transition-colors whitespace-nowrap"
-        >{scheduling ? 'Schedule' : 'Add'}</button>
+          >{scheduling ? "Schedule" : "Add"}</button
+        >
         <button
           type="button"
           onclick={() => (dropdownOpen = !dropdownOpen)}
           class="border-l border-stone-light px-2 text-stone hover:bg-sage-light cursor-pointer transition-colors text-xs"
-        >▾</button>
+          >▾</button
+        >
       </div>
     </div>
 
     <!-- Dropdown (outside overflow-hidden) -->
     {#if dropdownOpen}
-      <div class="fixed inset-0 z-10" onclick={() => (dropdownOpen = false)}></div>
-      <div class="absolute right-0 top-full mt-1 bg-card border border-stone-light rounded-md shadow-md z-20 w-36 py-1">
+      <div
+        class="fixed inset-0 z-10"
+        onclick={() => (dropdownOpen = false)}
+      ></div>
+      <div
+        class="absolute right-0 top-full mt-1 bg-card border border-stone-light rounded-md shadow-md z-20 w-36 py-1"
+      >
         <button
           type="button"
-          onclick={() => { scheduling = !scheduling; if (!scheduling) scheduledDate = ''; dropdownOpen = false; }}
+          onclick={() => {
+            scheduling = !scheduling;
+            if (!scheduling) scheduledDate = "";
+            dropdownOpen = false;
+          }}
           class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-sage-light cursor-pointer transition-colors"
-        >{scheduling ? 'Add' : 'Schedule'}</button>
+          >{scheduling ? "Add" : "Schedule"}</button
+        >
       </div>
     {/if}
   </div>
 </form>
 
-<!-- Active tasks -->
-<div class="flex justify-between items-baseline mb-2 mt-2">
-  <h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">
-    {#if filteredProject}
-      {filteredProject.name}
-    {:else}
-      My Tasks
-    {/if}
-  </h2>
-
-  <!-- Filter chips -->
-  {#if data.allProjects.length > 1}
-    <div class="flex gap-1.5 flex-wrap">
-      <button type="button" onclick={() => (activeFilter = null)}
-        class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-        class:bg-sage={!activeFilter}
-        class:text-white={!activeFilter}
-        class:bg-stone-lighter={!!activeFilter}
-        class:text-stone={!!activeFilter}>All</button>
-      {#each data.allProjects as project}
-        <button type="button" onclick={() => (activeFilter = project.id)}
+<!-- In Progress -->
+{#if filteredInProgressTasks.length > 0}
+  <div class="flex justify-between items-baseline mb-2 mt-2">
+    <h2
+      class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted"
+    >
+      In Progress
+    </h2>
+    {#if data.allProjects.length > 1}
+      <div class="flex gap-1.5 flex-wrap">
+        <button
+          type="button"
+          onclick={() => (activeFilter = null)}
           class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-          class:bg-sage={activeFilter === project.id}
-          class:text-white={activeFilter === project.id}
-          class:bg-stone-lighter={activeFilter !== project.id}
-          class:text-stone={activeFilter !== project.id}>{project.name}</button>
-      {/each}
+          class:bg-sage={!activeFilter}
+          class:text-white={!activeFilter}
+          class:bg-stone-lighter={!!activeFilter}
+          class:text-stone={!!activeFilter}>All</button
+        >
+        {#each data.allProjects as project}
+          <button
+            type="button"
+            onclick={() => (activeFilter = project.id)}
+            class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+            class:bg-sage={activeFilter === project.id}
+            class:text-white={activeFilter === project.id}
+            class:bg-stone-lighter={activeFilter !== project.id}
+            class:text-stone={activeFilter !== project.id}
+            >{project.name}</button
+          >
+        {/each}
+      </div>
+    {/if}
+  </div>
+  <div class="flex flex-col gap-1.5 mb-4">
+    {#each filteredInProgressTasks.filter((t) => !hiddenTasks.includes(t.id)) as task (task.id)}
+      <div
+        class="transition-all duration-250 ease-out"
+        style={collapsing === task.id
+          ? "opacity: 0; max-height: 0; margin: 0"
+          : "opacity: 1; max-height: 600px"}
+      >
+        {@render taskCard(task)}
+      </div>
+    {/each}
+  </div>
+  {#if filteredTodoTasks.length > 0}
+    <div class="flex justify-between items-baseline mb-2">
+      <h2
+        class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted"
+      >
+        To Do
+      </h2>
     </div>
   {/if}
-</div>
+{:else}
+  <div class="flex justify-between items-baseline mb-2 mt-2">
+    <h2
+      class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted"
+    >
+      To Do
+    </h2>
+    {#if data.allProjects.length > 1}
+      <div class="flex gap-1.5 flex-wrap">
+        <button
+          type="button"
+          onclick={() => (activeFilter = null)}
+          class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+          class:bg-sage={!activeFilter}
+          class:text-white={!activeFilter}
+          class:bg-stone-lighter={!!activeFilter}
+          class:text-stone={!!activeFilter}>All</button
+        >
+        {#each data.allProjects as project}
+          <button
+            type="button"
+            onclick={() => (activeFilter = project.id)}
+            class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+            class:bg-sage={activeFilter === project.id}
+            class:text-white={activeFilter === project.id}
+            class:bg-stone-lighter={activeFilter !== project.id}
+            class:text-stone={activeFilter !== project.id}
+            >{project.name}</button
+          >
+        {/each}
+      </div>
+    {/if}
+  </div>
+{/if}
 
-{#if filteredActiveTasks.length === 0}
+{#if filteredTodoTasks.length === 0 && filteredInProgressTasks.length === 0}
   <div class="flex flex-col items-center py-10 gap-3 text-center">
     <svg
       viewBox="0 0 200 120"
@@ -319,11 +415,11 @@
     <div class="text-base font-semibold text-ink">All clear</div>
     <div class="text-sm text-stone">Nothing left on your plate. Enjoy it.</div>
   </div>
-{:else}
+{:else if filteredTodoTasks.length > 0}
   <div class="flex flex-col gap-1.5 mb-4">
-    {#each filteredActiveTasks.filter((t) => !hiddenTasks.includes(t.id)) as task (task.id)}
+    {#each filteredTodoTasks.filter((t) => !hiddenTasks.includes(t.id)) as task (task.id)}
       <div
-        class="transition-all duration-250 ease-out overflow-hidden"
+        class="transition-all duration-250 ease-out"
         style={collapsing === task.id
           ? "opacity: 0; max-height: 0; margin: 0"
           : "opacity: 1; max-height: 600px"}
@@ -341,9 +437,8 @@
   >
     {data.showDone ? "hide completed ↑" : "show completed ↓"}
   </a>
-  <a
-    href="/snoozed"
-    class="text-stone hover:text-sage transition-colors">snoozed</a
+  <a href="/snoozed" class="text-stone hover:text-sage transition-colors"
+    >snoozed</a
   >
 </div>
 
@@ -363,21 +458,26 @@
 
 <!-- Partner cards -->
 {#each data.partners as partner}
-  <a href="/users/{partner.id}" class="block bg-sage-light border border-[#c8d0c4] rounded-lg px-5 py-4 mb-6 hover:border-sage transition-colors">
-    <div class="text-sm font-medium text-sage">{partner.name ?? partner.email}'s tasks</div>
+  <a
+    href="/users/{partner.id}"
+    class="block bg-sage-light border border-[#c8d0c4] rounded-lg px-5 py-4 mb-6 hover:border-sage transition-colors"
+  >
+    <div class="text-sm font-medium text-sage">
+      {partner.name ?? partner.email}'s tasks
+    </div>
     <div class="text-xs text-sage-muted mt-0.5">Shared projects →</div>
   </a>
 {/each}
 
 {#snippet taskCard(task: (typeof filteredActiveTasks)[0])}
   <div
-    class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors"
+    class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto_auto] gap-2 items-center hover:border-stone transition-colors"
   >
     <form
       method="POST"
       action="?/updateStatus"
       use:enhance={() => {
-        const isCompleting = task.status !== "done";
+        const isCompleting = task.status !== TaskStatus.done;
         if (isCompleting) completing = task.id;
         return async ({ update }) => {
           if (isCompleting) {
@@ -386,9 +486,7 @@
             await new Promise((r) => setTimeout(r, 250));
             if (task.generator?.nextRunAt) {
               const next = new Date(task.generator.nextRunAt);
-              toast(
-                `Done · repeats ${formatNextRun(next)}`,
-              );
+              toast(`Done · repeats ${formatNextRun(next)}`);
             }
             hiddenTasks = [...hiddenTasks, task.id];
           }
@@ -401,33 +499,45 @@
       <input
         type="hidden"
         name="status"
-        value={task.status === "done" ? "todo" : "done"}
+        value={task.status === TaskStatus.done
+          ? TaskStatus.todo
+          : TaskStatus.done}
       />
       <button
         type="submit"
         onmousedown={() => {
-          if (task.status !== "done") completing = task.id;
+          if (task.status !== TaskStatus.done) completing = task.id;
         }}
         class="w-5 h-5 rounded border flex items-center justify-center text-xs cursor-pointer hover:border-sage shrink-0"
-        class:bg-sage={task.status === "done" || completing === task.id}
-        class:border-sage={task.status === "done" || completing === task.id}
-        class:text-white={task.status === "done" || completing === task.id}
-        class:border-stone-light={task.status !== "done" &&
+        class:bg-sage={task.status === TaskStatus.done ||
+          completing === task.id}
+        class:border-sage={task.status === TaskStatus.done ||
+          completing === task.id}
+        class:text-white={task.status === TaskStatus.done ||
+          completing === task.id}
+        class:border-stone-light={task.status !== TaskStatus.done &&
           completing !== task.id}
       >
-        {#if task.status === "done" || completing === task.id}✓{/if}
+        {#if task.status === TaskStatus.done || completing === task.id}✓{/if}
       </button>
     </form>
 
     <div>
       <div
         class="text-sm"
-        class:line-through={task.status === "done"}
-        class:text-stone={task.status === "done"}
+        class:line-through={task.status === TaskStatus.done}
+        class:text-stone={task.status === TaskStatus.done}
       >
         {task.title}
       </div>
-      <div class="flex gap-1 mt-1 flex-wrap">
+      <div class="flex gap-1 mt-1 flex-wrap items-center">
+        <span class="text-xs text-stone"
+          >{new Date(task.createdAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}</span
+        >
+        <span class="text-xs text-stone">·</span>
         {#if task.generatorId}
           <span
             class="text-[10px] font-bold tracking-[0.07em] uppercase px-2 py-0.5 rounded-full bg-[#f0e8d8] text-[#8a5020]"
@@ -441,27 +551,66 @@
       </div>
     </div>
 
-    <div class="relative group shrink-0 flex items-center justify-center">
-      <div
-        class="w-2.5 h-2.5 rounded-full cursor-default"
-        style="background-color: {ageColor(task.createdAt)}"
-      ></div>
-      <div
-        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap text-xs bg-ink text-white px-2 py-1 rounded pointer-events-none z-10"
-      >
-        Created {taskAge(task.createdAt)}
-      </div>
-    </div>
+    <AgeDot createdAt={task.createdAt} color={ageColor(task.createdAt)} />
 
-    {#if task.status !== "done"}
+    {#if task.status !== TaskStatus.done}
+      <form method="POST" action="?/updateStatus" use:enhance>
+        <input type="hidden" name="taskId" value={task.id} />
+        <input
+          type="hidden"
+          name="status"
+          value={task.status === TaskStatus.in_progress
+            ? TaskStatus.todo
+            : TaskStatus.in_progress}
+        />
+        <button
+          type="submit"
+          title={task.status === TaskStatus.in_progress
+            ? "Mark as to do"
+            : "Mark as in progress"}
+          class="text-[11px] tracking-wide border rounded px-2.5 py-1 cursor-pointer whitespace-nowrap transition-colors"
+          class:border-blue-300={task.status === TaskStatus.in_progress}
+          class:text-blue-500={task.status === TaskStatus.in_progress}
+          class:bg-blue-50={task.status === TaskStatus.in_progress}
+          class:border-stone-light={task.status !== TaskStatus.in_progress}
+          class:text-stone={task.status !== TaskStatus.in_progress}
+          class:hover:border-blue-300={task.status !== TaskStatus.in_progress}
+          class:hover:text-blue-500={task.status !== TaskStatus.in_progress}
+          >▶</button
+        >
+      </form>
       <button
         type="button"
         onclick={() => (snoozing = snoozing === task.id ? null : task.id)}
-        class="text-[11px] tracking-wide border border-stone-light rounded px-2.5 py-1 text-stone hover:border-sage hover:text-sage transition-colors cursor-pointer whitespace-nowrap"
+        title={snoozing === task.id ? "Cancel" : "Snooze"}
+        class="border rounded p-1.5 cursor-pointer transition-colors"
+        class:border-sage={snoozing === task.id}
+        class:text-sage={snoozing === task.id}
+        class:border-stone-light={snoozing !== task.id}
+        class:text-stone={snoozing !== task.id}
+        class:hover:border-sage={snoozing !== task.id}
+        class:hover:text-sage={snoozing !== task.id}
       >
-        {snoozing === task.id ? "cancel" : "snooze"}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2" /><path
+            d="M5 3 2 6"
+          /><path d="m22 6-3-3" /><path d="M6.38 18.7 4 21" /><path
+            d="M17.64 18.67 20 21"
+          />
+        </svg>
       </button>
     {:else}
+      <div></div>
       <div></div>
     {/if}
   </div>
