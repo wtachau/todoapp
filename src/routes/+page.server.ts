@@ -85,11 +85,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	createTask: async ({ request, locals }) => {
-		const session = await locals.auth();
-		const userId = session!.user!.id!;
+		const userId = await getUserId(locals);
 		const data = await request.formData();
 		const title = (data.get('title') as string)?.trim();
 		const projectId = data.get('projectId') as string;
+		const scheduledFor = data.get('scheduledFor') as string | null;
 
 		if (!title) return fail(400, { error: 'Title is required' });
 
@@ -101,7 +101,13 @@ export const actions: Actions = {
 		if (!project.team.members.some((m) => m.userId === userId))
 			return fail(403, { error: 'Forbidden' });
 
-		await prisma.task.create({ data: { title, projectId, assignedTo: userId } });
+		let snoozedUntil: Date | null = null;
+		if (scheduledFor) {
+			const [year, month, day] = scheduledFor.split('-').map(Number);
+			snoozedUntil = fromZonedTime(new Date(year, month - 1, day, 9, 0, 0), TZ);
+		}
+
+		await prisma.task.create({ data: { title, projectId, assignedTo: userId, snoozedUntil } });
 		await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });
 	},
 

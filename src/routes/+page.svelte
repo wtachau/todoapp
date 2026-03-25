@@ -1,11 +1,14 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
   import { page } from "$app/stores";
-  import { toast } from "$lib/toast.svelte.ts";
+  import { toast } from "$lib/toast.svelte";
   import { ageColor as _ageColor, taskAge, formatNextRun } from '$lib/taskUtils';
 
   let { data } = $props();
   let snoozing = $state<string | null>(null);
+  let scheduling = $state(false);
+  let scheduledDate = $state('');
+  let dropdownOpen = $state(false);
   let completing = $state<string | null>(null);
   let collapsing = $state<string | null>(null);
   let hiddenTasks = $state<string[]>([]);
@@ -78,39 +81,82 @@
 {/if}
 
 <!-- Quick add -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
   method="POST"
   action="?/createTask"
-  use:enhance={() =>
-    async ({ update }) => {
+  use:enhance={() => {
+    const wasScheduling = scheduling;
+    return async ({ update }) => {
+      scheduling = false;
+      scheduledDate = '';
       await update({ reset: true });
-      toast("Task added");
-    }}
-  class="flex flex-col sm:flex-row gap-2 mb-6"
+      toast(wasScheduling ? "Task scheduled" : "Task added");
+    };
+  }}
+  class="mb-6"
 >
-  <input
-    name="title"
-    placeholder="Add a task…"
-    required
-    class="flex-1 border border-stone-light rounded-md px-3 py-2 text-sm bg-card focus:border-sage focus:outline-none"
-  />
-  <div class="flex gap-2">
+  <div class="relative">
+    <div class="flex items-stretch border border-stone-light rounded-md bg-card focus-within:border-sage transition-colors overflow-hidden">
+      <!-- Text input -->
+      <input
+        name="title"
+        placeholder="Add a task…"
+        required
+        class="flex-1 px-3 py-2.5 text-sm bg-transparent focus:outline-none min-w-0"
+      />
+
+      <!-- Date button (schedule mode) -->
+      {#if scheduling}
+        <input
+          type="date"
+          name="scheduledFor"
+          bind:value={scheduledDate}
+          required
+          min={new Date().toISOString().split('T')[0]}
+          class="w-32 px-2 py-2.5 text-sm bg-transparent border-l border-stone-light focus:outline-none cursor-pointer"
+          class:text-sage={scheduledDate}
+          class:text-stone-light={!scheduledDate}
+        />
+      {/if}
+
+      <!-- Split button: Add + dropdown chevron -->
+      <div class="flex items-stretch border-l border-stone-light">
+        <button
+          type="submit"
+          class="px-4 text-sm text-sage font-medium hover:bg-sage-light cursor-pointer transition-colors whitespace-nowrap"
+        >{scheduling ? 'Schedule' : 'Add'}</button>
+        <button
+          type="button"
+          onclick={() => (dropdownOpen = !dropdownOpen)}
+          class="border-l border-stone-light px-2 text-stone hover:bg-sage-light cursor-pointer transition-colors text-xs"
+        >▾</button>
+      </div>
+    </div>
+
+    <!-- Dropdown (outside overflow-hidden) -->
+    {#if dropdownOpen}
+      <div class="fixed inset-0 z-10" onclick={() => (dropdownOpen = false)}></div>
+      <div class="absolute right-0 top-full mt-1 bg-card border border-stone-light rounded-md shadow-md z-20 w-36 py-1">
+        <button
+          type="button"
+          onclick={() => { scheduling = !scheduling; if (!scheduling) scheduledDate = ''; dropdownOpen = false; }}
+          class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-sage-light cursor-pointer transition-colors"
+        >{scheduling ? 'Add' : 'Schedule'}</button>
+      </div>
+    {/if}
+  </div>
+
+  <!-- Project selector -->
+  <div class="mt-1.5 px-0.5">
     <select
       name="projectId"
-      class="border border-stone-light rounded-md px-2 py-2 text-sm bg-card focus:border-sage focus:outline-none w-20 sm:w-auto"
+      class="text-xs text-stone bg-transparent border-none focus:outline-none cursor-pointer hover:text-ink transition-colors"
     >
       {#each data.accessibleProjects as project}
-        <option
-          value={project.id}
-          selected={project.id === data.defaultProjectId}>{project.name}</option
-        >
+        <option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
       {/each}
     </select>
-    <button
-      type="submit"
-      class="flex-1 sm:flex-none px-4 py-2 bg-sage text-white text-sm rounded-md hover:bg-sage/90 cursor-pointer"
-      >Add</button
-    >
   </div>
 </form>
 
