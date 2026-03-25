@@ -15,10 +15,15 @@
 
   const ageColor = (createdAt: Date | string) => _ageColor(createdAt, data.urgencyDays);
 
+  let activeFilter = $state<string | null>(null);
   const filteredProject = $derived(
-    data.projectFilter
-      ? data.allProjects.find((p) => p.id === data.projectFilter)
-      : null,
+    activeFilter ? data.allProjects.find((p) => p.id === activeFilter) : null
+  );
+  const filteredActiveTasks = $derived(
+    activeFilter ? data.activeTasks.filter((t) => t.projectId === activeFilter) : data.activeTasks
+  );
+  const filteredDoneTasks = $derived(
+    activeFilter ? data.doneTasks.filter((t) => t.projectId === activeFilter) : data.doneTasks
   );
 
   function snoozeEnhance() {
@@ -56,30 +61,6 @@
   <title>Tasks | Dashboard</title>
 </svelte:head>
 
-<!-- Filter chips -->
-{#if data.allProjects.length > 1}
-  <div class="flex gap-2 flex-wrap mt-2 mb-4">
-    <a
-      href={filterUrl({ project: null })}
-      class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-      class:bg-sage={!data.projectFilter}
-      class:text-white={!data.projectFilter}
-      class:bg-stone-lighter={!!data.projectFilter}
-      class:text-stone={!!data.projectFilter}>All</a
-    >
-    {#each data.allProjects as project}
-      <a
-        href={filterUrl({ project: project.id })}
-        class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-        class:bg-sage={data.projectFilter === project.id}
-        class:text-white={data.projectFilter === project.id}
-        class:bg-stone-lighter={data.projectFilter !== project.id}
-        class:text-stone={data.projectFilter !== project.id}>{project.name}</a
-      >
-    {/each}
-  </div>
-{/if}
-
 <!-- Quick add -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
@@ -96,6 +77,21 @@
   }}
   class="mb-6"
 >
+  <!-- Project selector -->
+  <div class="mb-2 flex justify-end">
+    <div class="relative">
+      <select
+        name="projectId"
+        class="text-xs text-ink bg-card border border-stone rounded-full pl-3 pr-6 py-1 focus:outline-none cursor-pointer hover:border-ink transition-colors appearance-none"
+      >
+        {#each data.accessibleProjects as project}
+          <option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
+        {/each}
+      </select>
+      <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-ink text-[10px]">▾</span>
+    </div>
+  </div>
+
   <div class="relative">
     <div class="flex items-stretch border border-stone-light rounded-md bg-card focus-within:border-sage transition-colors overflow-hidden">
       <!-- Text input -->
@@ -146,34 +142,40 @@
       </div>
     {/if}
   </div>
-
-  <!-- Project selector -->
-  <div class="mt-1.5 px-0.5">
-    <select
-      name="projectId"
-      class="text-xs text-stone bg-transparent border-none focus:outline-none cursor-pointer hover:text-ink transition-colors"
-    >
-      {#each data.accessibleProjects as project}
-        <option value={project.id} selected={project.id === data.defaultProjectId}>{project.name}</option>
-      {/each}
-    </select>
-  </div>
 </form>
 
 <!-- Active tasks -->
 <div class="flex justify-between items-baseline mb-2 mt-2">
-  <h2
-    class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted"
-  >
+  <h2 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">
     {#if filteredProject}
       {filteredProject.name}
     {:else}
       My Tasks
     {/if}
   </h2>
+
+  <!-- Filter chips -->
+  {#if data.allProjects.length > 1}
+    <div class="flex gap-1.5 flex-wrap">
+      <button type="button" onclick={() => (activeFilter = null)}
+        class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+        class:bg-sage={!activeFilter}
+        class:text-white={!activeFilter}
+        class:bg-stone-lighter={!!activeFilter}
+        class:text-stone={!!activeFilter}>All</button>
+      {#each data.allProjects as project}
+        <button type="button" onclick={() => (activeFilter = project.id)}
+          class="text-[10px] font-bold tracking-[0.07em] uppercase px-2.5 py-1 rounded-full transition-colors cursor-pointer"
+          class:bg-sage={activeFilter === project.id}
+          class:text-white={activeFilter === project.id}
+          class:bg-stone-lighter={activeFilter !== project.id}
+          class:text-stone={activeFilter !== project.id}>{project.name}</button>
+      {/each}
+    </div>
+  {/if}
 </div>
 
-{#if data.activeTasks.length === 0}
+{#if filteredActiveTasks.length === 0}
   <div class="flex flex-col items-center py-10 gap-3 text-center">
     <svg
       viewBox="0 0 200 120"
@@ -319,7 +321,7 @@
   </div>
 {:else}
   <div class="flex flex-col gap-1.5 mb-4">
-    {#each data.activeTasks.filter((t) => !hiddenTasks.includes(t.id)) as task (task.id)}
+    {#each filteredActiveTasks.filter((t) => !hiddenTasks.includes(t.id)) as task (task.id)}
       <div
         class="transition-all duration-250 ease-out overflow-hidden"
         style={collapsing === task.id
@@ -343,48 +345,31 @@
     href="/snoozed"
     class="text-stone hover:text-sage transition-colors">snoozed</a
   >
-  {#each data.partners as partner}
-    <a
-      href="/users/{partner.id}"
-      class="text-stone hover:text-sage transition-colors"
-    >
-      {partner.name ?? partner.email}'s tasks
-    </a>
-  {/each}
 </div>
 
 <!-- Completed tasks -->
-{#if data.showDone && data.doneTasks.length > 0}
+{#if data.showDone && filteredDoneTasks.length > 0}
   <div
     class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted mb-2"
   >
     Completed
   </div>
   <div class="flex flex-col gap-1.5 mb-8 opacity-60">
-    {#each data.doneTasks as task}
+    {#each filteredDoneTasks as task}
       {@render taskCard(task)}
     {/each}
   </div>
 {/if}
 
-<!-- Partner section -->
+<!-- Partner cards -->
 {#each data.partners as partner}
-  <div class="bg-sage-light border border-[#c8d0c4] rounded-lg px-5 py-4 mb-6">
-    <div
-      class="text-[10px] font-bold tracking-[0.12em] uppercase text-sage mb-2"
-    >
-      {partner.name ?? partner.email}'s tasks · shared projects
-    </div>
-    <a
-      href="/users/{partner.id}"
-      class="text-xs text-sage-muted hover:text-sage transition-colors"
-    >
-      View all →
-    </a>
-  </div>
+  <a href="/users/{partner.id}" class="block bg-sage-light border border-[#c8d0c4] rounded-lg px-5 py-4 mb-6 hover:border-sage transition-colors">
+    <div class="text-sm font-medium text-sage">{partner.name ?? partner.email}'s tasks</div>
+    <div class="text-xs text-sage-muted mt-0.5">Shared projects →</div>
+  </a>
 {/each}
 
-{#snippet taskCard(task: (typeof data.activeTasks)[0])}
+{#snippet taskCard(task: (typeof filteredActiveTasks)[0])}
   <div
     class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 grid grid-cols-[28px_1fr_auto_auto] gap-2 items-center hover:border-stone transition-colors"
   >

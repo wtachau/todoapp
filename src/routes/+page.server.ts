@@ -16,14 +16,12 @@ function at9amPT(daysFromNow: number): Date {
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const userId = await getUserId(locals);
 	const showDone = url.searchParams.get('showDone') === 'true';
-	const projectFilter = url.searchParams.get('project') ?? null;
 
 	const now = new Date();
 
 	const baseWhere = {
 		assignedTo: userId,
-		OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
-		...(projectFilter ? { projectId: projectFilter } : {})
+		OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }]
 	};
 
 	const taskInclude = {
@@ -78,7 +76,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		teams,
 		partners,
 		showDone,
-		projectFilter,
 		urgencyDays: currentUser?.urgencyDays ?? 3
 	};
 };
