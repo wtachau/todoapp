@@ -192,16 +192,18 @@
 			{:else}
 				<div class="bg-card border border-stone-light rounded-md px-3.5 py-2.5 flex items-center gap-3 hover:border-stone transition-colors">
 					<div class="flex-1">
-						<div class="text-sm font-medium flex items-baseline gap-1.5">
-							{gen.title}
-							<span class="text-stone-light font-normal text-xs">·</span>
-							<span class="text-stone font-normal text-xs">{gen.rruleText}</span>
-						</div>
+						<div class="text-sm font-medium">{gen.title}</div>
 						<div class="text-xs text-stone mt-0.5">
-							{gen.assignmentMode === 'fixed'
-								? `always → ${gen.fixedAssignee?.name ?? gen.fixedAssignee?.email ?? '?'}`
-								: 'round-robin'}
-							· next: {formatNextRun(gen.nextRunAt)}
+							<span class="font-semibold text-ink">
+								{gen.assignmentMode === 'fixed'
+									? `always → ${gen.fixedAssignee?.name ?? gen.fixedAssignee?.email ?? '?'}`
+									: 'round-robin'}
+							</span>
+							· {gen.rruleText}
+							· next run: {formatNextRun(gen.nextRunAt)}
+							{#if gen.nextAssigneeName}
+								<span class="text-stone-muted">({gen.nextAssigneeName})</span>
+							{/if}
 						</div>
 					</div>
 					<button type="button" onclick={() => startEditing(gen)} class="text-stone-light hover:text-sage transition-colors cursor-pointer" title="Edit">

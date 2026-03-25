@@ -35,13 +35,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const isMember = project.team.members.some((m) => m.userId === userId);
 	if (!isMember) throw error(403, 'Forbidden');
 
-	const generators = project.generators.map((g) => ({
-		...g,
-		rruleText: (() => {
+	const members = project.team.members.map((m) => m.user);
+	const generators = project.generators.map((g) => {
+		const rruleText = (() => {
 			try { return RRule.fromString(g.recurrenceRule.replace('RRULE:', '')).toText(); }
 			catch { return g.recurrenceRule.replace('RRULE:', ''); }
-		})()
-	}));
+		})();
+		let nextAssigneeName: string | null = null;
+		const firstName = (name: string | null | undefined, email: string | null | undefined) =>
+			(name ?? email ?? '').split(' ')[0] || null;
+		if (g.assignmentMode === 'fixed') {
+			nextAssigneeName = firstName(g.fixedAssignee?.name, g.fixedAssignee?.email);
+		} else {
+			const next = members.find((m) => m.id !== g.lastAssignedTo) ?? members[0];
+			nextAssigneeName = firstName(next?.name, next?.email);
+		}
+		return { ...g, rruleText, nextAssigneeName };
+	});
 
 	return { project: { ...project, generators } };
 };
