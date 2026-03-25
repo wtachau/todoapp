@@ -3,17 +3,14 @@ import { redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
 
-const PROTECTED_ROUTES = ['/dashboard'];
+const PUBLIC_ROUTES = ['/sign-in', '/api'];
 
 const authGuard: Handle = async ({ event, resolve }) => {
-	const session = await event.locals.auth();
+	const isPublic = PUBLIC_ROUTES.some((route) => event.url.pathname.startsWith(route));
 
-	const isProtected = PROTECTED_ROUTES.some((route) =>
-		event.url.pathname.startsWith(route)
-	);
-
-	if (isProtected && !session?.user) {
-		throw redirect(307, '/sign-in');
+	if (!isPublic) {
+		const session = await event.locals.auth();
+		if (!session?.user) throw redirect(307, '/sign-in');
 	}
 
 	return resolve(event);

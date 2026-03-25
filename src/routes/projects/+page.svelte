@@ -16,7 +16,7 @@
 		<div class="text-xs font-bold tracking-wide text-stone uppercase mb-2">{team.name}</div>
 
 		{#each team.projects as project}
-			<a href="/dashboard/projects/{project.id}" class="block text-sm text-sage hover:underline py-1">
+			<a href="/projects/{project.id}" class="block text-sm text-sage hover:underline py-1">
 				{project.name}
 			</a>
 		{/each}

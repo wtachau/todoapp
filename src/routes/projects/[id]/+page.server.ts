@@ -194,6 +194,72 @@ export const actions: Actions = {
 		});
 	},
 
+	updateGenerator: async ({ request, locals }) => {
+		const userId = await getUserId(locals);
+		const data = await request.formData();
+		const generatorId = data.get('generatorId') as string;
+		const title = (data.get('title') as string)?.trim();
+		const assignmentMode = data.get('assignmentMode') as string;
+		const fixedAssigneeId = (data.get('fixedAssigneeId') as string) || null;
+		const startsWithId = (data.get('startsWithId') as string) || null;
+		const advanced = data.get('advanced') === 'true';
+		const days = data.getAll('days') as string[];
+		const rruleRaw = (data.get('rrule') as string)?.trim();
+
+		if (!title) return fail(400, { error: 'Title is required' });
+		if (!['fixed', 'round_robin'].includes(assignmentMode))
+			return fail(400, { error: 'Invalid assignment mode' });
+		if (assignmentMode === 'fixed' && !fixedAssigneeId)
+			return fail(400, { error: 'Assignee required for fixed mode' });
+		if (!advanced && days.length === 0) return fail(400, { error: 'Select at least one day' });
+		if (advanced && !rruleRaw) return fail(400, { error: 'RRULE is required' });
+
+		const generator = await prisma.taskGenerator.findUnique({
+			where: { id: generatorId },
+			include: taskWithProjectMembers
+		});
+		if (!generator) throw error(404);
+
+		const isMember = generator.project.team.members.some((m) => m.userId === userId);
+		if (!isMember) return fail(403, { error: 'Forbidden' });
+
+		let recurrenceRule: string;
+		let nextRunAt: Date;
+		if (advanced) {
+			try {
+				const rule = RRule.fromString(rruleRaw);
+				recurrenceRule = rule.toString();
+				nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+			} catch {
+				return fail(400, { error: 'Invalid RRULE string' });
+			}
+		} else {
+			const byweekday = days.map((d) => DAY_MAP[d]);
+			const rule = new RRule({ freq: RRule.WEEKLY, byweekday });
+			recurrenceRule = rule.toString();
+			nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+		}
+
+		let lastAssignedTo = generator.lastAssignedTo;
+		if (assignmentMode === 'round_robin' && startsWithId) {
+			const other = generator.project.team.members.find((m) => m.userId !== startsWithId);
+			lastAssignedTo = other?.userId ?? null;
+		}
+		if (assignmentMode === 'fixed') lastAssignedTo = null;
+
+		await prisma.taskGenerator.update({
+			where: { id: generatorId },
+			data: {
+				title,
+				assignmentMode: assignmentMode as 'fixed' | 'round_robin',
+				fixedAssigneeId,
+				lastAssignedTo,
+				recurrenceRule,
+				nextRunAt
+			}
+		});
+	},
+
 	deleteGenerator: async ({ request, locals }) => {
 		const session = await locals.auth();
 		const userId = session!.user!.id!;

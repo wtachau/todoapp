@@ -14,11 +14,11 @@
 {#if isAuthed}
 	<div class="min-h-screen bg-linen">
 		<header class="flex justify-between items-center px-4 sm:px-8 py-5">
-			<a href="/dashboard" class="font-serif italic text-sage text-xl no-underline">shared tasks</a>
+			<a href="/" class="font-serif italic text-sage text-xl no-underline">shared tasks</a>
 			<nav class="flex gap-5 text-xs tracking-wide text-stone">
-				<a href="/dashboard/projects" class="hover:text-sage transition-colors">projects</a>
-				<a href="/dashboard/snoozed" class="hover:text-sage transition-colors">snoozed</a>
-				<a href="/dashboard/settings" class="hover:text-sage transition-colors">settings</a>
+				<a href="/projects" class="hover:text-sage transition-colors">projects</a>
+				<a href="/snoozed" class="hover:text-sage transition-colors">snoozed</a>
+				<a href="/settings" class="hover:text-sage transition-colors">settings</a>
 				{#if data.session?.user?.name}
 					<span class="text-stone-light hidden sm:inline">·</span>
 					<span class="hidden sm:inline">{data.session.user.name}</span>

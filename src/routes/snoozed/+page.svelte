@@ -11,7 +11,7 @@
 </script>
 
 <div class="flex items-baseline gap-3 mt-2 mb-6">
-	<a href="/dashboard" class="text-xs text-stone hover:text-sage transition-colors">← back</a>
+	<a href="/" class="text-xs text-stone hover:text-sage transition-colors">← back</a>
 	<h1 class="text-[10px] font-bold tracking-[0.14em] uppercase text-stone-muted">Snoozed Tasks</h1>
 </div>
 

@@ -30,7 +30,13 @@
       "WebSearch",
       "Bash(gh run:*)",
       "Bash(psql postgresql://localhost:5432/todoapp -c \":*)",
-      "Bash(npx svelte-check:*)"
+      "Bash(npx svelte-check:*)",
+      "Bash(cp dashboard/+page.svelte +page.svelte)",
+      "Bash(cp dashboard/+page.server.ts +page.server.ts)",
+      "Bash(mv dashboard/projects .)",
+      "Bash(mv dashboard/snoozed .)",
+      "Bash(mv dashboard/settings .)",
+      "Bash(npx svelte-kit:*)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",

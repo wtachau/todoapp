@@ -31,6 +31,6 @@ export const actions: Actions = {
 		if (!membership) return fail(403, { error: 'Forbidden' });
 
 		const project = await prisma.project.create({ data: { name, teamId } });
-		redirect(303, `/dashboard/projects/${project.id}`);
+		redirect(303, `/projects/${project.id}`);
 	}
 };
