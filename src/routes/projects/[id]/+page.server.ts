@@ -5,9 +5,7 @@ import { error, fail } from '@sveltejs/kit';
 import pkg from 'rrule';
 const { RRule } = pkg;
 
-function startOfDayUTC(date: Date): Date {
-	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-}
+import { DEFAULT_TIMEZONE, startOfDayInTimezone } from '$lib/server/timezone';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -65,11 +63,6 @@ const DAY_MAP: Record<string, number> = {
 	SA: RRule.SA.weekday,
 	SU: RRule.SU.weekday
 };
-
-function buildNextRunAt(recurrenceRule: string): Date {
-	const rule = RRule.fromString(recurrenceRule);
-	return rule.after(new Date()) ?? new Date();
-}
 
 export const actions: Actions = {
 	createTask: async ({ request, params, locals }) => {
@@ -180,7 +173,7 @@ export const actions: Actions = {
 			try {
 				const rule = RRule.fromString(rruleRaw);
 				recurrenceRule = rule.toString();
-				nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+				nextRunAt = startOfDayInTimezone(rule.after(new Date()) ?? new Date(), DEFAULT_TIMEZONE);
 			} catch {
 				return fail(400, { error: 'Invalid RRULE string' });
 			}
@@ -188,7 +181,7 @@ export const actions: Actions = {
 			const byweekday = days.map((d) => DAY_MAP[d]);
 			const rule = new RRule({ freq: RRule.WEEKLY, byweekday });
 			recurrenceRule = rule.toString();
-			nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+			nextRunAt = startOfDayInTimezone(rule.after(new Date()) ?? new Date(), DEFAULT_TIMEZONE);
 		}
 
 		// For round-robin: if a start person is specified, set lastAssignedTo to the
@@ -247,7 +240,7 @@ export const actions: Actions = {
 			try {
 				const rule = RRule.fromString(rruleRaw);
 				recurrenceRule = rule.toString();
-				nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+				nextRunAt = startOfDayInTimezone(rule.after(new Date()) ?? new Date(), DEFAULT_TIMEZONE);
 			} catch {
 				return fail(400, { error: 'Invalid RRULE string' });
 			}
@@ -255,7 +248,7 @@ export const actions: Actions = {
 			const byweekday = days.map((d) => DAY_MAP[d]);
 			const rule = new RRule({ freq: RRule.WEEKLY, byweekday });
 			recurrenceRule = rule.toString();
-			nextRunAt = startOfDayUTC(rule.after(new Date()) ?? new Date());
+			nextRunAt = startOfDayInTimezone(rule.after(new Date()) ?? new Date(), DEFAULT_TIMEZONE);
 		}
 
 		let lastAssignedTo = generator.lastAssignedTo;

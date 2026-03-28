@@ -5,9 +5,7 @@ import type { RequestHandler } from './$types';
 
 const { RRule } = pkg;
 
-function startOfDayUTC(date: Date): Date {
-	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-}
+import { DEFAULT_TIMEZONE, startOfDayInTimezone } from '$lib/server/timezone';
 
 export const GET: RequestHandler = async ({ request }) => {
 	if (process.env.NODE_ENV !== 'development') {
@@ -77,7 +75,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			gen.nextRunAt.getUTCMonth(),
 			gen.nextRunAt.getUTCDate() + 1
 		));
-		const nextRunAt = startOfDayUTC(rule.after(dayAfter, true) ?? dayAfter);
+		const nextRunAt = startOfDayInTimezone(rule.after(dayAfter, true) ?? dayAfter, DEFAULT_TIMEZONE);
 
 		// Two separate inserts — no nested create (dbgenerated UUID convention)
 		const task = await prisma.task.create({
