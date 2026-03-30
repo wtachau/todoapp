@@ -1,6 +1,6 @@
 import { prisma } from "$lib/server/prisma";
 import { error } from "@sveltejs/kit";
-import pkg from "rrule";
+import { RRule } from "rrule";
 import type { RequestHandler } from "./$types";
 
 function startOfDayUTC(date: Date): Date {
@@ -8,7 +8,6 @@ function startOfDayUTC(date: Date): Date {
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
   );
 }
-const { RRule } = pkg;
 
 import { DEFAULT_TIMEZONE, startOfDayInTimezone } from "$lib/server/timezone";
 
