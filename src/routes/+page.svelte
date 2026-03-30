@@ -540,8 +540,8 @@
         <span class="text-xs text-stone">·</span>
         {#if task.generatorId}
           <span
-            class="text-[10px] font-bold tracking-[0.07em] uppercase px-2 py-0.5 rounded-full bg-[#f0e8d8] text-[#8a5020]"
-            >↺ recurring</span
+            class="text-xs px-1.5 py-0.5 rounded-full bg-[#f0e8d8] text-[#8a5020]"
+            title="Recurring"><i class="fa-solid fa-rotate"></i></span
           >
         {/if}
         <span
