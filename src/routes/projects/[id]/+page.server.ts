@@ -2,8 +2,7 @@ import { prisma } from '$lib/server/prisma';
 import { getUserId } from '$lib/server/auth';
 import { projectWithMembers, taskWithProjectMembers } from '$lib/server/queries';
 import { error, fail } from '@sveltejs/kit';
-import pkg from 'rrule';
-const { RRule } = pkg;
+import { RRule } from 'rrule';
 
 function startOfDayUTC(date: Date): Date {
 	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));

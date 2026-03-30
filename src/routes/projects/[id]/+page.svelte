@@ -16,6 +16,20 @@
 	let editGenMode = $state<'fixed' | 'round_robin'>('round_robin');
 	let editGenAdvanced = $state(false);
 	let editGenDays = $state<string[]>([]);
+	let rruleError = $state<string | null>(null);
+	let editRruleError = $state<string | null>(null);
+
+	import { RRule } from 'rrule';
+
+	function validateRrule(value: string): string | null {
+		if (!value) return null;
+		try {
+			RRule.fromString(value);
+			return null;
+		} catch (e) {
+			return e instanceof Error ? e.message : 'Invalid RRULE string';
+		}
+	}
 
 	const DAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 	const DAY_LABELS: Record<string, string> = {
@@ -35,6 +49,7 @@
 		const days = parseSimpleDays(gen.recurrenceRule);
 		editGenAdvanced = days === null;
 		editGenDays = days ?? [];
+		editRruleError = null;
 	}
 
 </script>
@@ -139,7 +154,11 @@
 
 					{#if editGenAdvanced}
 						<input name="rrule" value={gen.recurrenceRule.replace('RRULE:', '')} required
-							class="border border-stone-light rounded px-3 py-1.5 text-sm font-mono bg-linen focus:border-sage focus:outline-none" />
+							oninput={(e) => { const el = e.currentTarget as HTMLInputElement; const pos = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(pos, pos); editRruleError = validateRrule(el.value); }}
+							class="border rounded px-3 py-1.5 text-sm font-mono bg-linen focus:outline-none {editRruleError ? 'border-red-400 focus:border-red-400' : 'border-stone-light focus:border-sage'}" />
+						{#if editRruleError}
+							<p class="text-xs text-red-500 bg-red-50 border border-red-200 rounded px-2 py-1">{editRruleError}</p>
+						{/if}
 					{:else}
 						<div class="flex gap-3 flex-wrap">
 							{#each DAYS as day}
@@ -185,7 +204,7 @@
 					{/if}
 
 					<div class="flex gap-2">
-						<button type="submit" class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer">Save</button>
+						<button type="submit" disabled={!!editRruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Save</button>
 						<button type="button" onclick={() => (editingGen = null)} class="px-4 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
 					</div>
 				</form>
@@ -232,10 +251,15 @@
 
 		{#if genAdvanced}
 			<input name="rrule" placeholder="FREQ=DAILY;INTERVAL=2" required
-				class="border border-stone-light rounded px-3 py-1.5 text-sm font-mono bg-linen focus:border-sage focus:outline-none" />
-			<p class="text-xs text-stone">
-				e.g. <code>FREQ=DAILY;INTERVAL=2</code> · <code>FREQ=WEEKLY;BYDAY=MO,WE,FR</code>
-			</p>
+				oninput={(e) => { const el = e.currentTarget as HTMLInputElement; const pos = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(pos, pos); rruleError = validateRrule(el.value); }}
+				class="border rounded px-3 py-1.5 text-sm font-mono bg-linen focus:outline-none {rruleError ? 'border-red-400 focus:border-red-400' : 'border-stone-light focus:border-sage'}" />
+			{#if rruleError}
+				<p class="text-xs text-red-500 bg-red-50 border border-red-200 rounded px-2 py-1">{rruleError}</p>
+			{:else}
+				<p class="text-xs text-stone">
+					e.g. <code>FREQ=DAILY;INTERVAL=2</code> · <code>FREQ=WEEKLY;BYDAY=MO,WE,FR</code>
+				</p>
+			{/if}
 		{:else}
 			<div class="flex gap-3 flex-wrap">
 				{#each DAYS as day}
@@ -285,7 +309,7 @@
 		{/if}
 
 		<div class="flex gap-2">
-			<button type="submit" class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer">Add generator</button>
+			<button type="submit" disabled={!!rruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Add generator</button>
 			<button type="button" onclick={() => (openGenerator = false)} class="px-4 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
 		</div>
 	</form>
