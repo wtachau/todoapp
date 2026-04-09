@@ -104,8 +104,15 @@ export const actions: Actions = {
 			snoozedUntil = fromZonedTime(new Date(year, month - 1, day, 9, 0, 0), TZ);
 		}
 
-		await prisma.task.create({ data: { title, projectId, assignedTo: userId, snoozedUntil } });
+		const task = await prisma.task.create({
+			data: { title, projectId, assignedTo: userId, snoozedUntil },
+			include: {
+				project: { include: { team: { include: { members: true } } } },
+				generator: { select: { nextRunAt: true } }
+			}
+		});
 		await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });
+		return { task };
 	},
 
 	createProject: async ({ request, locals }) => {

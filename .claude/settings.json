@@ -18,7 +18,9 @@
       "Bash(sed *)",
       "Bash(find *)",
       "Bash(openssl *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node -e *)",
+      "Bash(grep *)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",

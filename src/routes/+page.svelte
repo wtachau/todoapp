@@ -17,18 +17,17 @@
   let completing = $state<string | null>(null);
   let collapsing = $state<string | null>(null);
   let hiddenTasks = $state<string[]>([]);
+  let pendingCount = $state(0);
+  let optimisticTasks = $state<typeof data.activeTasks>([]);
 
   const ageColor = (createdAt: Date | string) =>
     _ageColor(createdAt, data.urgencyDays);
 
   let activeFilter = $state<string | null>(null);
-  const filteredProject = $derived(
-    activeFilter ? data.allProjects.find((p) => p.id === activeFilter) : null,
-  );
   const filteredActiveTasks = $derived(
-    activeFilter
-      ? data.activeTasks.filter((t) => t.projectId === activeFilter)
-      : data.activeTasks,
+    [...optimisticTasks, ...data.activeTasks].filter((t) =>
+      activeFilter ? t.projectId === activeFilter : true
+    )
   );
   const filteredTodoTasks = $derived(
     filteredActiveTasks.filter((t) => t.status !== TaskStatus.in_progress),
@@ -58,6 +57,7 @@
       return async ({ update }: { update: () => Promise<void> }) => {
         snoozing = null;
         await update();
+        optimisticTasks = [];
         toast(msg);
       };
     };
@@ -82,12 +82,52 @@
 <form
   method="POST"
   action="?/createTask"
-  use:enhance={() => {
+  use:enhance={({ formData, formElement }) => {
     const wasScheduling = scheduling;
-    return async ({ update }) => {
-      scheduling = false;
-      scheduledDate = "";
-      await update({ reset: true });
+
+    // Optimistically add the task to the list immediately, before the server responds.
+    // We build a minimal stub that satisfies the shape taskCard expects.
+    const title = formData.get("title") as string;
+    const projectId = formData.get("projectId") as string;
+    const project = data.accessibleProjects.find((p) => p.id === projectId);
+    const tempId = `temp-${Date.now()}`;
+    optimisticTasks = [
+      {
+        id: tempId,
+        title,
+        status: TaskStatus.todo,
+        projectId,
+        project: {
+          id: projectId,
+          name: project?.name ?? "",
+          team: { members: [] as any[] },
+        },
+        generator: null,
+        generatorId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        assignedTo: "",
+        snoozedUntil: null,
+      } as any,
+      ...optimisticTasks,
+    ];
+
+    // Clear the form and reset scheduling state right away — don't wait for the server.
+    formElement.reset();
+    scheduling = false;
+    scheduledDate = "";
+    pendingCount++;
+
+    return async ({ result }) => {
+      pendingCount--;
+      if (result.type === 'success' && result.data?.task) {
+        // Swap the stub for the real task in one render — no flash.
+        optimisticTasks = optimisticTasks.map((t) =>
+          t.id === tempId ? (result.data as any).task : t
+        );
+      } else {
+        optimisticTasks = optimisticTasks.filter((t) => t.id !== tempId);
+      }
       toast(wasScheduling ? "Task scheduled" : "Task added");
     };
   }}
@@ -478,10 +518,10 @@
       action="?/updateStatus"
       use:enhance={() => {
         const isCompleting = task.status !== TaskStatus.done;
-        if (isCompleting) completing = task.id;
-        return async ({ update }) => {
-          if (isCompleting) {
-            await new Promise((r) => setTimeout(r, 250));
+        if (isCompleting) {
+          completing = task.id;
+          pendingCount++;
+          setTimeout(async () => {
             collapsing = task.id;
             await new Promise((r) => setTimeout(r, 250));
             if (task.generator?.nextRunAt) {
@@ -489,8 +529,11 @@
               toast(`Done · repeats ${formatNextRun(next)}`);
             }
             hiddenTasks = [...hiddenTasks, task.id];
-          }
-          await update();
+          }, 250);
+        }
+        return async ({ update }) => {
+          if (isCompleting) pendingCount--;
+          else { await update(); optimisticTasks = []; }
         };
       }}
       style="display: contents"
@@ -643,3 +686,13 @@
     </div>
   {/if}
 {/snippet}
+
+{#if pendingCount > 0}
+  <div
+    class="fixed bottom-4 left-4 flex items-center gap-2 text-xs text-stone bg-card border border-stone-light rounded-md px-3 py-1.5 shadow-sm"
+  >
+    <span class="inline-block w-2 h-2 rounded-full bg-sage animate-pulse"
+    ></span>
+    Saving…
+  </div>
+{/if}
