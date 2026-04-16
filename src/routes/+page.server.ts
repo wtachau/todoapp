@@ -3,6 +3,7 @@ import { getUserId } from '$lib/server/auth';
 import { projectWithMembers } from '$lib/server/queries';
 import { fail } from '@sveltejs/kit';
 import { fromZonedTime } from 'date-fns-tz';
+import { createGeneratorFromFormData } from '$lib/server/generator';
 import type { Actions, PageServerLoad } from './$types';
 
 const TZ = 'America/Los_Angeles';
@@ -113,6 +114,18 @@ export const actions: Actions = {
 		});
 		await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });
 		return { task };
+	},
+
+	createGenerator: async ({ request, locals }) => {
+		const userId = await getUserId(locals);
+		const form = await request.formData();
+		const projectId = form.get('projectId') as string;
+		const result = await createGeneratorFromFormData(form, projectId, userId);
+		if ('ok' in result) {
+			await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });
+			return;
+		}
+		return result;
 	},
 
 	createProject: async ({ request, locals }) => {

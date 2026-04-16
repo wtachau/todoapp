@@ -9,6 +9,7 @@
     formatNextRun,
   } from "$lib/taskUtils";
   import AgeDot from "$lib/components/AgeDot.svelte";
+  import GeneratorFormFields from "$lib/components/GeneratorFormFields.svelte";
   let { data } = $props();
   let snoozing = $state<string | null>(null);
   let scheduling = $state(false);
@@ -20,14 +21,32 @@
   let pendingCount = $state(0);
   let optimisticTasks = $state<typeof data.activeTasks>([]);
 
+  // Recurring (task generator) mode state for the quick-add form
+  let recurring = $state(false);
+  // svelte-ignore state_referenced_locally
+  let selectedProjectId = $state<string>(data.defaultProjectId ?? "");
+  let genDays = $state<string[]>([]);
+  let genAdvanced = $state(false);
+  let genRrule = $state("");
+  let genRruleError = $state<string | null>(null);
+  let genMode = $state<"fixed" | "round_robin">("round_robin");
+  let genFixedAssigneeId = $state<string>("");
+  let genStartsWithId = $state<string>("");
+
+  // Members of the currently-selected project (for assignee dropdowns)
+  const selectedProjectMembers = $derived(
+    data.teams.find((t) => t.projects.some((p) => p.id === selectedProjectId))
+      ?.members ?? [],
+  );
+
   const ageColor = (createdAt: Date | string) =>
     _ageColor(createdAt, data.urgencyDays);
 
   let activeFilter = $state<string | null>(null);
   const filteredActiveTasks = $derived(
     [...optimisticTasks, ...data.activeTasks].filter((t) =>
-      activeFilter ? t.projectId === activeFilter : true
-    )
+      activeFilter ? t.projectId === activeFilter : true,
+    ),
   );
   const filteredTodoTasks = $derived(
     filteredActiveTasks.filter((t) => t.status !== TaskStatus.in_progress),
@@ -81,8 +100,29 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
   method="POST"
-  action="?/createTask"
+  action={recurring ? "?/createGenerator" : "?/createTask"}
   use:enhance={({ formData, formElement }) => {
+    // Generator path: no optimistic UI (they don't appear in the dashboard list),
+    // just submit and reset on success.
+    if (recurring) {
+      pendingCount++;
+      return async ({ result, update }) => {
+        pendingCount--;
+        if (result.type === "success") {
+          formElement.reset();
+          recurring = false;
+          genDays = [];
+          genAdvanced = false;
+          genRrule = "";
+          genMode = "round_robin";
+          genFixedAssigneeId = "";
+          genStartsWithId = "";
+          await update();
+          toast("Recurring task added");
+        }
+      };
+    }
+
     const wasScheduling = scheduling;
 
     // Optimistically add the task to the list immediately, before the server responds.
@@ -120,10 +160,10 @@
 
     return async ({ result }) => {
       pendingCount--;
-      if (result.type === 'success' && result.data?.task) {
+      if (result.type === "success" && result.data?.task) {
         // Swap the stub for the real task in one render — no flash.
         optimisticTasks = optimisticTasks.map((t) =>
-          t.id === tempId ? (result.data as any).task : t
+          t.id === tempId ? (result.data as any).task : t,
         );
       } else {
         optimisticTasks = optimisticTasks.filter((t) => t.id !== tempId);
@@ -138,14 +178,11 @@
     <div class="relative">
       <select
         name="projectId"
+        bind:value={selectedProjectId}
         class="text-xs text-ink bg-card border border-stone rounded-full pl-3 pr-6 py-1 focus:outline-none cursor-pointer hover:border-ink transition-colors appearance-none"
       >
         {#each data.accessibleProjects as project}
-          <option
-            value={project.id}
-            selected={project.id === data.defaultProjectId}
-            >{project.name}</option
-          >
+          <option value={project.id}>{project.name}</option>
         {/each}
       </select>
       <span
@@ -185,8 +222,13 @@
       <div class="flex items-stretch border-l border-stone-light">
         <button
           type="submit"
-          class="px-4 text-sm text-sage font-medium hover:bg-sage-light cursor-pointer transition-colors whitespace-nowrap"
-          >{scheduling ? "Schedule" : "Add"}</button
+          disabled={recurring && genAdvanced && !!genRruleError}
+          class="px-4 text-sm text-sage font-medium hover:bg-sage-light cursor-pointer transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+          >{recurring
+            ? "Add recurring"
+            : scheduling
+              ? "Schedule"
+              : "Add"}</button
         >
         <button
           type="button"
@@ -210,15 +252,47 @@
           type="button"
           onclick={() => {
             scheduling = !scheduling;
+            if (scheduling) recurring = false;
             if (!scheduling) scheduledDate = "";
             dropdownOpen = false;
           }}
           class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-sage-light cursor-pointer transition-colors"
           >{scheduling ? "Add" : "Schedule"}</button
         >
+        <button
+          type="button"
+          onclick={() => {
+            recurring = !recurring;
+            if (recurring) {
+              scheduling = false;
+              scheduledDate = "";
+            }
+            dropdownOpen = false;
+          }}
+          class="w-full text-left px-3 py-2 text-sm text-ink hover:bg-sage-light cursor-pointer transition-colors"
+          >{recurring ? "Add" : "Recurring"}</button
+        >
       </div>
     {/if}
   </div>
+
+  <!-- Recurring (generator) fields — shown below the input when recurring mode is active -->
+  {#if recurring}
+    <div
+      class="mt-3 flex flex-col gap-3 p-3 bg-card border border-stone-light rounded-md"
+    >
+      <GeneratorFormFields
+        members={selectedProjectMembers}
+        bind:days={genDays}
+        bind:advanced={genAdvanced}
+        bind:rrule={genRrule}
+        bind:rruleError={genRruleError}
+        bind:mode={genMode}
+        bind:fixedAssigneeId={genFixedAssigneeId}
+        bind:startsWithId={genStartsWithId}
+      />
+    </div>
+  {/if}
 </form>
 
 <!-- In Progress -->
@@ -480,6 +554,12 @@
   <a href="/snoozed" class="text-stone hover:text-sage transition-colors"
     >snoozed</a
   >
+  {#if selectedProjectId}
+    <a
+      href="/projects/{selectedProjectId}"
+      class="text-stone hover:text-sage transition-colors">recurring tasks →</a
+    >
+  {/if}
 </div>
 
 <!-- Completed tasks -->
@@ -533,7 +613,10 @@
         }
         return async ({ update }) => {
           if (isCompleting) pendingCount--;
-          else { await update(); optimisticTasks = []; }
+          else {
+            await update();
+            optimisticTasks = [];
+          }
         };
       }}
       style="display: contents"

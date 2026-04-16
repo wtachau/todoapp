@@ -1,40 +1,34 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { formatNextRun } from '$lib/taskUtils';
+	import GeneratorFormFields from '$lib/components/GeneratorFormFields.svelte';
 
 	let { data } = $props();
 	let { project } = $derived(data);
 	let members = $derived(project.team.members);
 	let open = $state(false);
 	let showDone = $state(false);
-	let openGenerator = $state(false);
-	let genMode = $state<'fixed' | 'round_robin'>('round_robin');
-	let genAdvanced = $state(false);
 
+	// Create-generator form state
+	let openGenerator = $state(false);
+	let genDays = $state<string[]>([]);
+	let genAdvanced = $state(false);
+	let genRrule = $state('');
+	let genRruleError = $state<string | null>(null);
+	let genMode = $state<'fixed' | 'round_robin'>('round_robin');
+	let genFixedAssigneeId = $state('');
+	let genStartsWithId = $state('');
+
+	// Edit-generator form state
 	type Generator = typeof project.generators[0];
 	let editingGen = $state<Generator | null>(null);
-	let editGenMode = $state<'fixed' | 'round_robin'>('round_robin');
-	let editGenAdvanced = $state(false);
 	let editGenDays = $state<string[]>([]);
-	let rruleError = $state<string | null>(null);
-	let editRruleError = $state<string | null>(null);
-
-	import { RRule } from 'rrule';
-
-	function validateRrule(value: string): string | null {
-		if (!value) return null;
-		try {
-			RRule.fromString(value);
-			return null;
-		} catch (e) {
-			return e instanceof Error ? e.message : 'Invalid RRULE string';
-		}
-	}
-
-	const DAYS = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-	const DAY_LABELS: Record<string, string> = {
-		MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun'
-	};
+	let editGenAdvanced = $state(false);
+	let editGenRrule = $state('');
+	let editGenRruleError = $state<string | null>(null);
+	let editGenMode = $state<'fixed' | 'round_robin'>('round_robin');
+	let editGenFixedAssigneeId = $state('');
+	let editGenStartsWithId = $state('');
 
 	function parseSimpleDays(rrule: string): string[] | null {
 		const cleaned = rrule.replace('RRULE:', '');
@@ -49,9 +43,11 @@
 		const days = parseSimpleDays(gen.recurrenceRule);
 		editGenAdvanced = days === null;
 		editGenDays = days ?? [];
-		editRruleError = null;
+		editGenRrule = editGenAdvanced ? gen.recurrenceRule.replace('RRULE:', '') : '';
+		editGenFixedAssigneeId = gen.fixedAssigneeId ?? '';
+		editGenStartsWithId = '';
+		editGenRruleError = null;
 	}
-
 </script>
 
 <svelte:head>
@@ -150,61 +146,20 @@
 					<input type="hidden" name="generatorId" value={gen.id} />
 					<input name="title" value={gen.title} required autofocus
 						class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none" />
-					<input type="hidden" name="advanced" value={editGenAdvanced ? 'true' : 'false'} />
 
-					{#if editGenAdvanced}
-						<input name="rrule" value={gen.recurrenceRule.replace('RRULE:', '')} required
-							oninput={(e) => { const el = e.currentTarget as HTMLInputElement; const pos = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(pos, pos); editRruleError = validateRrule(el.value); }}
-							class="border rounded px-3 py-1.5 text-sm font-mono bg-linen focus:outline-none {editRruleError ? 'border-red-400 focus:border-red-400' : 'border-stone-light focus:border-sage'}" />
-						{#if editRruleError}
-							<p class="text-xs text-red-500 bg-red-50 border border-red-200 rounded px-2 py-1">{editRruleError}</p>
-						{/if}
-					{:else}
-						<div class="flex gap-3 flex-wrap">
-							{#each DAYS as day}
-								<label class="flex items-center gap-1 text-sm cursor-pointer text-stone hover:text-ink">
-									<input type="checkbox" name="days" value={day} checked={editGenDays.includes(day)} class="accent-sage" />
-									{DAY_LABELS[day]}
-								</label>
-							{/each}
-						</div>
-					{/if}
-
-					<button type="button" onclick={() => (editGenAdvanced = !editGenAdvanced)}
-						class="self-start text-xs text-stone hover:text-sage underline cursor-pointer">
-						{editGenAdvanced ? '← simple' : 'advanced (rrule)'}
-					</button>
-
-					<div class="flex gap-4">
-						<label class="flex items-center gap-1.5 text-sm cursor-pointer">
-							<input type="radio" name="assignmentMode" value="round_robin" checked={editGenMode === 'round_robin'} onchange={() => (editGenMode = 'round_robin')} class="accent-sage" />
-							<span class="text-stone">Round-robin</span>
-						</label>
-						<label class="flex items-center gap-1.5 text-sm cursor-pointer">
-							<input type="radio" name="assignmentMode" value="fixed" checked={editGenMode === 'fixed'} onchange={() => (editGenMode = 'fixed')} class="accent-sage" />
-							<span class="text-stone">Fixed</span>
-						</label>
-					</div>
-
-					{#if editGenMode === 'fixed'}
-						<select name="fixedAssigneeId" required
-							class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none">
-							{#each members as m}
-								<option value={m.userId} selected={gen.fixedAssigneeId === m.userId}>{m.user.name ?? m.user.email}</option>
-							{/each}
-						</select>
-					{:else}
-						<select name="startsWithId"
-							class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none">
-							<option value="">Keep current rotation</option>
-							{#each members as m}
-								<option value={m.userId}>{m.user.name ?? m.user.email} goes next</option>
-							{/each}
-						</select>
-					{/if}
+					<GeneratorFormFields
+						{members}
+						bind:days={editGenDays}
+						bind:advanced={editGenAdvanced}
+						bind:rrule={editGenRrule}
+						bind:rruleError={editGenRruleError}
+						bind:mode={editGenMode}
+						bind:fixedAssigneeId={editGenFixedAssigneeId}
+						bind:startsWithId={editGenStartsWithId}
+					/>
 
 					<div class="flex gap-2">
-						<button type="submit" disabled={!!editRruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Save</button>
+						<button type="submit" disabled={!!editGenRruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Save</button>
 						<button type="button" onclick={() => (editingGen = null)} class="px-4 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
 					</div>
 				</form>
@@ -247,69 +202,20 @@
 	>
 		<input name="title" placeholder="e.g. Take out trash" required autofocus
 			class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none" />
-		<input type="hidden" name="advanced" value={genAdvanced ? 'true' : 'false'} />
 
-		{#if genAdvanced}
-			<input name="rrule" placeholder="FREQ=DAILY;INTERVAL=2" required
-				oninput={(e) => { const el = e.currentTarget as HTMLInputElement; const pos = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(pos, pos); rruleError = validateRrule(el.value); }}
-				class="border rounded px-3 py-1.5 text-sm font-mono bg-linen focus:outline-none {rruleError ? 'border-red-400 focus:border-red-400' : 'border-stone-light focus:border-sage'}" />
-			{#if rruleError}
-				<p class="text-xs text-red-500 bg-red-50 border border-red-200 rounded px-2 py-1">{rruleError}</p>
-			{:else}
-				<p class="text-xs text-stone">
-					e.g. <code>FREQ=DAILY;INTERVAL=2</code> · <code>FREQ=WEEKLY;BYDAY=MO,WE,FR</code>
-				</p>
-			{/if}
-		{:else}
-			<div class="flex gap-3 flex-wrap">
-				{#each DAYS as day}
-					<label class="flex items-center gap-1 text-sm cursor-pointer text-stone hover:text-ink">
-						<input type="checkbox" name="days" value={day} class="accent-sage" />
-						{DAY_LABELS[day]}
-					</label>
-				{/each}
-			</div>
-		{/if}
-
-		<button
-			type="button"
-			onclick={() => (genAdvanced = !genAdvanced)}
-			class="self-start text-xs text-stone hover:text-sage underline cursor-pointer"
-		>
-			{genAdvanced ? '← simple' : 'advanced (rrule)'}
-		</button>
-
-		<div class="flex gap-4">
-			<label class="flex items-center gap-1.5 text-sm cursor-pointer">
-				<input type="radio" name="assignmentMode" value="round_robin" checked={genMode === 'round_robin'} onchange={() => (genMode = 'round_robin')} class="accent-sage" />
-				<span class="text-stone">Round-robin</span>
-			</label>
-			<label class="flex items-center gap-1.5 text-sm cursor-pointer">
-				<input type="radio" name="assignmentMode" value="fixed" checked={genMode === 'fixed'} onchange={() => (genMode = 'fixed')} class="accent-sage" />
-				<span class="text-stone">Fixed</span>
-			</label>
-		</div>
-
-		{#if genMode === 'fixed'}
-			<select name="fixedAssigneeId" required
-				class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none">
-				<option value="">Assign to…</option>
-				{#each members as m}
-					<option value={m.userId}>{m.user.name ?? m.user.email}</option>
-				{/each}
-			</select>
-		{:else}
-			<select name="startsWithId"
-				class="border border-stone-light rounded px-3 py-1.5 text-sm bg-linen focus:border-sage focus:outline-none">
-				<option value="">Starts with… (optional)</option>
-				{#each members as m}
-					<option value={m.userId}>{m.user.name ?? m.user.email}</option>
-				{/each}
-			</select>
-		{/if}
+		<GeneratorFormFields
+			{members}
+			bind:days={genDays}
+			bind:advanced={genAdvanced}
+			bind:rrule={genRrule}
+			bind:rruleError={genRruleError}
+			bind:mode={genMode}
+			bind:fixedAssigneeId={genFixedAssigneeId}
+			bind:startsWithId={genStartsWithId}
+		/>
 
 		<div class="flex gap-2">
-			<button type="submit" disabled={!!rruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Add generator</button>
+			<button type="submit" disabled={!!genRruleError} class="px-4 py-1.5 bg-sage text-white text-sm rounded hover:bg-sage/90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Add generator</button>
 			<button type="button" onclick={() => (openGenerator = false)} class="px-4 py-1.5 text-sm text-stone hover:text-ink cursor-pointer">Cancel</button>
 		</div>
 	</form>
