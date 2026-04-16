@@ -20,7 +20,8 @@
       "Bash(openssl *)",
       "WebSearch",
       "Bash(node -e *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(ls *)"
     ],
     "additionalDirectories": [
       "/Users/williamtachau/src/todoapp/src/routes/dashboard/projects",
