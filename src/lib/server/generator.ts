@@ -4,6 +4,14 @@ import { prisma } from './prisma';
 import { projectWithMembers } from './queries';
 import { DEFAULT_TIMEZONE, startOfDayInTimezone } from './timezone';
 
+export function rruleToText(rule: string): string {
+	try {
+		return RRule.fromString(rule.replace('RRULE:', '')).toText();
+	} catch {
+		return rule.replace('RRULE:', '');
+	}
+}
+
 export const DAY_MAP: Record<string, number> = {
 	MO: RRule.MO.weekday,
 	TU: RRule.TU.weekday,

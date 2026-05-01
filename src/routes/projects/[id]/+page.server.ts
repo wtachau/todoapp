@@ -7,7 +7,7 @@ import {
 import { error, fail } from "@sveltejs/kit";
 import { RRule } from "rrule";
 import { DEFAULT_TIMEZONE, startOfDayInTimezone } from "$lib/server/timezone";
-import { createGeneratorFromFormData, DAY_MAP } from "$lib/server/generator";
+import { createGeneratorFromFormData, DAY_MAP, rruleToText } from "$lib/server/generator";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -37,15 +37,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
   const members = project.team.members.map((m) => m.user);
   const generators = project.generators.map((g) => {
-    const rruleText = (() => {
-      try {
-        return RRule.fromString(
-          g.recurrenceRule.replace("RRULE:", ""),
-        ).toText();
-      } catch {
-        return g.recurrenceRule.replace("RRULE:", "");
-      }
-    })();
+    const rruleText = rruleToText(g.recurrenceRule);
     let nextAssigneeName: string | null = null;
     const firstName = (
       name: string | null | undefined,

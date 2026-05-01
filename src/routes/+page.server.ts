@@ -3,7 +3,7 @@ import { getUserId } from '$lib/server/auth';
 import { projectWithMembers } from '$lib/server/queries';
 import { fail } from '@sveltejs/kit';
 import { fromZonedTime } from 'date-fns-tz';
-import { createGeneratorFromFormData } from '$lib/server/generator';
+import { createGeneratorFromFormData, rruleToText } from '$lib/server/generator';
 import type { Actions, PageServerLoad } from './$types';
 
 const TZ = 'America/Los_Angeles';
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const taskInclude = {
 		project: { include: { team: { include: { members: true } } } },
-		generator: { select: { nextRunAt: true } }
+		generator: { select: { nextRunAt: true, recurrenceRule: true } }
 	};
 
 	const [activeTasks, doneTasks, teams, currentUser] = await Promise.all([
@@ -68,9 +68,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const accessibleProjects = teams.flatMap((t) => t.projects);
 	const defaultProjectId = currentUser?.defaultProjectId ?? accessibleProjects[0]?.id ?? null;
 
+	function withRruleText<T extends { generator: { recurrenceRule: string; nextRunAt: Date } | null }>(tasks: T[]) {
+		return tasks.map((task) => ({
+			...task,
+			generator: task.generator
+				? { ...task.generator, rruleText: rruleToText(task.generator.recurrenceRule) }
+				: task.generator
+		}));
+	}
+
 	return {
-		activeTasks,
-		doneTasks,
+		activeTasks: withRruleText(activeTasks),
+		doneTasks: withRruleText(doneTasks),
 		allProjects,
 		accessibleProjects,
 		defaultProjectId,
@@ -109,7 +118,7 @@ export const actions: Actions = {
 			data: { title, projectId, assignedTo: userId, snoozedUntil },
 			include: {
 				project: { include: { team: { include: { members: true } } } },
-				generator: { select: { nextRunAt: true } }
+				generator: { select: { nextRunAt: true, recurrenceRule: true } }
 			}
 		});
 		await prisma.user.update({ where: { id: userId }, data: { defaultProjectId: projectId } });

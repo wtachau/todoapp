@@ -666,8 +666,11 @@
         <span class="text-xs text-stone">·</span>
         {#if task.generatorId}
           <span
-            class="text-xs px-1.5 py-0.5 rounded-full bg-[#f0e8d8] text-[#8a5020]"
-            title="Recurring"><i class="fa-solid fa-rotate"></i></span
+            class="text-xs px-1.5 py-0.5 rounded-full bg-[#f0e8d8] text-[#8a5020] relative group/recur cursor-default"
+            ><i class="fa-solid fa-rotate"></i
+            ><span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/recur:opacity-100 transition-opacity pointer-events-none"
+              >{task.generator?.rruleText ?? 'Recurring'}</span
+            ></span
           >
         {/if}
         <span
